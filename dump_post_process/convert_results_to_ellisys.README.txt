@@ -1,0 +1,10 @@
+This is a postprocessing utility which converts phy dumps of the Tx 
+activity of 1 or several devices into the import format for the Ellisys
+Bluetooth Analyzer SW uses.
+This way the BLE standard (and some industry propietary extensions) traffic can
+be analyzed by this Ellisys tool.
+
+Note that all packets which are not BLE modulated won't be coverted (will be 
+ignored). 
+Note that the Ellisys analyzer SW is _very_ picky, and ignores many packets
+which are in some way malformed.

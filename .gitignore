@@ -1,0 +1,15 @@
+bs_2G4_phy_v1
+src/test
+*.d
+*.o
+*.a
+*.so
+*.d
+*.Tsymbols
+*.gcda
+*.gcno
+*~
+~*.~*
+/.*project
+.settings/*
+RunResults*

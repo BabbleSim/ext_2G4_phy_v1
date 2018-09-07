@@ -1,0 +1,4 @@
+ext_2G4_phy_v1: libUtilv1\
+ libPhyComv1 \
+ libRandv2 \
+ ext_2G4_libPhyComv1
