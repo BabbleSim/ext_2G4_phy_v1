@@ -88,7 +88,7 @@ uint32_t modem_digital_perf_sync(void *this, p2G4_radioparams_t *rx_radioparams,
  *  RSSI_power_level : Analog power level as measured by modem_analog_rx()
  *
  * outputs:
- *  RSSI  : RSSI "digital" value returned by this modem, following the c2G4_rssi_power_t format (16.16 signed value) *
+ *  RSSI  : RSSI "digital" value returned by this modem, following the p2G4_rssi_power_t format (16.16 signed value) *
  */
 void modem_digital_RSSI(void *this, p2G4_radioparams_t *rx_radioparams, double RSSI_power_level, p2G4_rssi_power_t *RSSI);
 
