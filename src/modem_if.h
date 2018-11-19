@@ -42,7 +42,7 @@ void* modem_init(int argc, char *argv[], uint dev_nbr, uint nbr_devices);
  * inputs:
  *  this               : Pointer to this modem object
  *  rx_radioparams     : Radio parameters/configuration of this receiver for this Rx/RSSI measurement
- *  rx_powers          : For each possible transmitter ([0..n_devices]) what is their power level at this device antenna connector in dBm
+ *  rx_powers          : For each possible transmitter ([0..n_devices-1]) what is their power level at this device antenna connector in dBm
  *  txl_c              : For each possible transmitter what are their Tx parameters
  *  desired_tx_nbr     : which of the transmitters is the one we are trying to receive
  *
