@@ -64,7 +64,7 @@ static void dump_RSSI_heading(FILE *file){
 
 static void dump_modemrx_heading(FILE *file){
   fprintf(file,"time,tx_nbr,CalNotRecal,center_freq,modulation,"
-               "BER,syncprob,SNR,anaSNR,ISISNR\n");
+               "BER,syncprob,SNR,anaSNR,ISISNR,att[i],rxpow[i]\n");
 }
 
 /**
