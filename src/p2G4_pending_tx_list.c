@@ -88,7 +88,8 @@ int txl_find_fitting_tx(p2G4_rx_t *rx_s, bs_time_t current_time){
        (tx_list[i].tx_s.start_time == current_time) &&
        (tx_list[i].tx_s.phy_address == rx_s->phy_address) &&
        (tx_list[i].tx_s.radio_params.center_freq == rx_s->radio_params.center_freq) &&
-       (tx_list[i].tx_s.radio_params.modulation == rx_s->radio_params.modulation))
+       ((tx_list[i].tx_s.radio_params.modulation & P2G4_MOD_SIMILAR_MASK) ==
+           (rx_s->radio_params.modulation & P2G4_MOD_SIMILAR_MASK)))
     {
       return i;
     }
