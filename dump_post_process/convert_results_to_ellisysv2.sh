@@ -18,8 +18,9 @@ do
 done
 
 sort -g $TMP_FILE | awk '
-func rfchannel(freq) { return (freq-2)/2 }
-function rtrim(s) { sub(/[ \t\r\n]+$/, "", s); return s }
+function rfchannel(freq) { return (freq-2)/2; }
+function rtrim(s)        { sub(/[ \t\r\n]+$/, "", s); return s; }
+
 BEGIN{
 FS=",";
 print("FileFormat:Bluetooth\n\
