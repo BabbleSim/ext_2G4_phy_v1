@@ -356,7 +356,7 @@ static void f_rx_payload(uint d){
   if (current_time >= start) { \
     bs_trace_error_time_line("Device %u wants to start a %s in"\
                              "%"PRItime" which has already passed\n",\
-                             d, start, type); \
+                             d, type, start); \
   }
 
 static void prepare_wait(uint d){
@@ -389,7 +389,7 @@ static void check_valid_abort(p2G4_abort_t *abort, bs_time_t start_time, const c
   }
   if (start_time > abort->recheck_time) {
     bs_trace_error_time_line("Device %u wants a %s abort recheck before %s start (in %"PRItime")\n",
-                             d, type, abort->recheck_time);
+                             d, type, type, abort->recheck_time);
   }
 }
 
