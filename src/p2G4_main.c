@@ -354,7 +354,7 @@ static void f_rx_payload(uint d){
 
 #define PAST_CHECK(start, d, type) \
   if (current_time >= start) { \
-    bs_trace_error_time_line("Device %u wants to start a %s in"\
+    bs_trace_error_time_line("Device %u wants to start a %s in "\
                              "%"PRItime" which has already passed\n",\
                              d, type, start); \
   }
