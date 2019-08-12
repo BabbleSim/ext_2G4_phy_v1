@@ -8,8 +8,8 @@
 #include "bs_tracing.h"
 
 /*
- * Array with one element per device
- * Each device can have 1 function pending
+ * Array with one element per device interface
+ * Each interface can have 1 function pending
  */
 static fq_element_t *f_queue = NULL;
 
