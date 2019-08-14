@@ -49,7 +49,7 @@ as follows:
    until it eventually comes back to 1.
 
 You can find more details about each substate machine in
-[README_state_machines.md](README_state_machines.md)
+[README_device_interface.md](README_device_interface.md)
 
 ## Overall workings
 
