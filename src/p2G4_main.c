@@ -369,8 +369,11 @@ static void prepare_wait(uint d){
 
   fq_add(wait.end, Wait_Done, d);
 
-  PAST_CHECK(wait.end - 1, d, "wait");
-  //-1 because we allow silly waits into right now
+  if (current_time > wait.end) {
+    bs_trace_error_time_line("Device %u wants to start a wait in "
+                             "%"PRItime" which has already passed\n",
+                             d, wait.end);
+  }
 }
 
 static void check_valid_abort(p2G4_abort_t *abort, bs_time_t start_time, const char* type, uint d){
