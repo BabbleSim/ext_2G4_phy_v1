@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+# Copyright 2019 Oticon A/S
+# SPDX-License-Identifier: Apache-2.0
+
+import os
+import time
+import argparse
+import csv
+import struct
+
+# default max packet length (phdr + access address + pdu + crc)
+SNAPLEN = 512
+
+class CSVFile:
+	def __init__(self, f):
+		if not hasattr(f, 'read'):
+			f = open(f, newline='')
+		self.file = f
+		self.reader = csv.reader(self.file, delimiter=',', lineterminator='\n')
+		self.headers = self.reader.__next__()
+
+	def __del__(self):
+		self.file.close()
+
+	def __enter__(self):
+		return self
+
+	def __exit__(self, exc_type, exc_val, exc_tb):
+		self.file.close()
+		return False
+
+	def __iter__(self):
+		return self
+
+	def __next__(self):
+		row = {}
+		lst = self.reader.__next__()
+		for idx, header in enumerate(self.headers):
+			row[header] = lst[idx]
+		row['start_time'] = int(row['start_time'], 10)
+		return row
+
+def write(outfile, *inputs, snaplen = SNAPLEN, basetime=None):
+	buf = bytearray(30)
+
+	if basetime == None:
+		basetime = int(time.time() * 1000000)
+
+	# write pcap header
+	struct.pack_into('<IHHiIII', buf, 0,
+			0xa1b2c3d4, # magic_number
+			2,          # version_major
+			4,          # version_minor
+			0,          # thiszone
+			0,          # sigfigs
+			snaplen,    # snaplen
+			256)        # network, 256 = BLUETOOTH_LE_LL_WITH_PHDR
+	outfile.write(buf[:24])
+
+	inputs = [ CSVFile(f) for f in inputs ]
+	rows = [ next(cf, None) for cf in inputs ]
+
+	while True:
+		min_ts = None
+		min_idx = None
+		for idx, row in enumerate(rows):
+			if not row:
+				continue
+			ts = row['start_time']
+			if min_ts == None or ts < min_ts:
+				min_ts = ts
+				min_idx = idx
+
+		if min_idx == None:
+			break
+
+		row = rows[min_idx]
+		rows[min_idx] = next(inputs[min_idx], None)
+
+		orig_len = int(row['packet_size'], 10)
+		if orig_len == 0:
+			continue
+
+		freq = float(row['center_freq'])
+		if freq >= 1.0 and freq < 81.0:
+			rf_channel = int((freq - 1.0) / 2)
+		elif freq >= 2401.0 and freq < 2481.0:
+			rf_channel = int((freq - 2401.0) / 2)
+		else:
+			raise ValueError
+
+		pdu_crc = bytes.fromhex(row['packet'])
+		if len(pdu_crc) != orig_len:
+			raise ValueError
+		orig_len += 14; # 10 bytes phdr + 4 bytes access address
+		incl_len = min(orig_len, snaplen)
+
+		access_address = int(row['phy_address'], 16)
+
+		ts = basetime + min_ts
+		ts_sec = ts // 1000000
+		ts_usec = ts % 1000000
+
+		struct.pack_into('<IIIIBbbBIHI', buf, 0,
+				# pcap record header, 16 bytes
+				ts_sec,
+				ts_usec,
+				incl_len,
+				orig_len,
+				# packet data, incl_len bytes
+				# - phdr, 10 bytes
+				rf_channel,
+				0, # signal power
+				0, # noise power
+				0, # access address offenses
+				0, # reference access address
+				0, # flags
+				# - le packet (access address + pdu + crc, no preamble)
+				access_address)
+		outfile.write(buf)
+		outfile.write(pdu_crc[:(incl_len - 14)])
+
+def open_input(filename):
+	try:
+		mtime = os.path.getmtime(filename)
+		return (mtime, open(filename, mode='r', newline=''))
+	except OSError as e:
+		raise argparse.ArgumentTypeError(
+				"can't open '{}': {}".format(filename, e))
+
+def parse_args():
+	parser = argparse.ArgumentParser(description='Convert BabbleSim Phy csv files to pcap')
+	parser.add_argument('-o', '--output',
+			dest='output',
+			metavar='OUTFILE',
+			help='write to this pcap file (required)',
+			required=True,
+			type=argparse.FileType(mode='wb'))
+	parser.add_argument(
+			dest='inputs',
+			metavar='INFILE',
+			help='input csv file(s) (at least one is required)',
+			nargs='+',
+			type=open_input)
+	return parser.parse_args()
+
+args = parse_args()
+basetime = int(min([ p[0] for p in args.inputs ]) * 1000000)
+write(args.output, *[ p[1] for p in args.inputs ], basetime=basetime)
+
+# vim: set ts=4 sw=4 noet:
