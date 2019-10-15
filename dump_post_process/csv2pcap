@@ -11,13 +11,25 @@ import struct
 # default max packet length (phdr + access address + pdu + crc)
 SNAPLEN = 512
 
+KEY_ALTERNATIVES = [
+	('start_time',  'Tx_Start_Time'),
+	('center_freq', 'CenterFreq'),
+	('phy_address', 'PhyAddress'),
+	('packet_size', 'PacketSize'),
+	('packet',      'Packet'),
+]
+
 class CSVFile:
 	def __init__(self, f):
 		if not hasattr(f, 'read'):
 			f = open(f, newline='')
 		self.file = f
 		self.reader = csv.reader(self.file, delimiter=',', lineterminator='\n')
-		self.headers = self.reader.__next__()
+		headers = self.reader.__next__()
+		for (key, alt) in KEY_ALTERNATIVES:
+			if not key in headers and alt in headers:
+				headers[headers.index(alt)] = key
+		self.headers = headers
 
 	def __del__(self):
 		self.file.close()
