@@ -82,6 +82,27 @@ static int pick_and_validate_abort(uint d, p2G4_abort_t *ab, const char* type) {
   return 0;
 }
 
+/**
+ * All devices which may be able to receive this transmission are moved
+ * to the Rx_Found state, where they may start synchronizing to it
+ */
+static void find_and_activate_rx(const p2G4_tx_t *tx_s, uint tx_d) {
+  for (int rx_d = 0 ; rx_d < nbr_active_devs; rx_d++) {
+    rx_status_t *rx_status = &rx_a[rx_d];
+    if (rx_status->state == Rx_State_Searching &&
+       (tx_s->phy_address == rx_status->rx_s.phy_address) &&
+       (tx_s->radio_params.center_freq == rx_status->rx_s.radio_params.center_freq) &&
+       (tx_s->radio_params.modulation & P2G4_MOD_SIMILAR_MASK) ==
+           (rx_status->rx_s.radio_params.modulation & P2G4_MOD_SIMILAR_MASK))
+    {
+      rx_status->tx_nbr = tx_d;
+      rx_status->state = Rx_State_NotSearching;
+      fq_add(current_time, Rx_Found, rx_d);
+    }
+  }
+}
+
+
 static void f_tx_start(uint d) {
   p2G4_tx_t* tx_s;
 
@@ -89,6 +110,8 @@ static void f_tx_start(uint d) {
 
   txl_activate(d);
   bs_trace_raw_time(8,"Starting Tx for device %u\n", d);
+
+  find_and_activate_rx(tx_s, d);
 
   bs_time_t TxEndt;
   TxEndt = BS_MIN(tx_s->end_time, tx_s->abort.abort_time);
@@ -137,8 +160,16 @@ static void rx_do_RSSI(uint d) {
   chm_RSSImeas(&tx_l_c, &RSSI_s, &rx_a[d].rx_done_s.rssi, d, current_time);
 }
 
+static inline void rx_enqueue_search_end(uint d){
+  rx_status_t *rx_status = &rx_a[d];
+
+  rx_status->state = Rx_State_Searching;
+  bs_time_t end_time = BS_MIN((rx_status->scan_end + 1), rx_status->rx_s.abort.recheck_time);
+  fq_add(end_time, Rx_Search, d);
+  return;
+}
+
 static void f_rx_search(uint d) {
-  int tx_d;
   rx_status_t *rx_status;
   rx_status = &rx_a[d];
 
@@ -161,6 +192,7 @@ static void f_rx_search(uint d) {
 
     bs_trace_raw_time(8,"RxDone (NoSync during Rx_search) for device %u\n", d);
 
+    rx_status->state = Rx_State_NotSearching;
     rx_status->rx_done_s.end_time = current_time;
 
     p2G4_phy_resp_rx(d, &rx_status->rx_done_s);
@@ -169,21 +201,24 @@ static void f_rx_search(uint d) {
     return;
   }
 
-  tx_d = txl_find_fitting_tx(&rx_status->rx_s, current_time );
+  rx_enqueue_search_end(d);
+  return;
+}
 
-  if (tx_d >= 0) {
-    rx_status->tx_nbr = tx_d;
-    if ( chm_is_packet_synched( &tx_l_c, tx_d, d,  &rx_status->rx_s, current_time ) ) {
-      rx_status->sync_end    = current_time + rx_status->rx_s.pream_and_addr_duration - 1;
-      rx_status->header_end  = rx_status->sync_end + rx_status->rx_s.header_duration;
-      rx_status->payload_end = tx_l_c.tx_list[tx_d].tx_s.end_time;
-      rx_status->biterrors = 0;
-      fq_add(current_time, Rx_Sync, d);
-      return;
-    }
+static void f_rx_found(uint d){
+  rx_status_t *rx_status = &rx_a[d];
+
+  uint tx_d = rx_status->tx_nbr;
+  if ( chm_is_packet_synched( &tx_l_c, tx_d, d,  &rx_status->rx_s, current_time ) ) {
+    rx_status->sync_end    = current_time + rx_status->rx_s.pream_and_addr_duration - 1;
+    rx_status->header_end  = rx_status->sync_end + rx_status->rx_s.header_duration;
+    rx_status->payload_end = tx_l_c.tx_list[tx_d].tx_s.end_time;
+    rx_status->biterrors = 0;
+    fq_add(current_time, Rx_Sync, d);
+    return;
   }
 
-  fq_add(current_time + 1, Rx_Search, d);
+  rx_enqueue_search_end(d);
   return;
 }
 
@@ -548,6 +583,7 @@ int main(int argc, char *argv[]) {
   fq_register_func(Tx_End,         f_tx_end         );
   fq_register_func(RSSI_Meas,      f_RSSI_meas      );
   fq_register_func(Rx_Search,      f_rx_search      );
+  fq_register_func(Rx_Found,       f_rx_found       );
   fq_register_func(Rx_Sync,        f_rx_sync        );
   fq_register_func(Rx_Header,      f_rx_header      );
   fq_register_func(Rx_Payload,     f_rx_payload     );

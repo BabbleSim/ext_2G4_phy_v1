@@ -74,16 +74,12 @@ void txl_clear(uint dev_nbr);
 void txl_activate(uint dev_nbr);
 
 /**
- * Find if there is a fitting Tx for a given Rx attempt
- * if there is not, return -1
- * if there is, return the device number
- *
- * @param rx_s Reception parameters
- * @param current_time Current simulation time (a transmission must be starting
- *                     in this exact microsecond to match
+ * Reception state
  */
-int txl_find_fitting_tx(p2G4_rx_t *rx_s, bs_time_t current_time);
-
+typedef enum {
+    Rx_State_NotSearching = 0, //Not actively searching for any tx
+    Rx_State_Searching,//Searching for a fitting tx
+} rx_state_t;
 
 /**
  * Reception status (per device interface)
@@ -98,6 +94,7 @@ typedef struct {
   p2G4_rx_done_t rx_done_s; //Response message (being prepared)
   int tx_nbr; //If we found a fitting Tx, which is its device number
   uint biterrors;
+  rx_state_t state;
 } rx_status_t;
 
 #ifdef __cplusplus
