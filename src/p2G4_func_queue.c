@@ -40,7 +40,7 @@ void fq_register_func(f_index_t type, queable_f fptr) {
  *        which is perfectly for simulations with a few devices.
  *        But, if there is many devices, this would be quite slow.
  */
-static inline void fq_find_next(){
+void fq_find_next(){
   bs_time_t chosen_f_time;
   next_d = 0;
   chosen_f_time = f_queue[0].time;
@@ -68,7 +68,6 @@ void fq_add(bs_time_t time, f_index_t index, uint32_t dev_nbr) {
   fq_element_t *el = &f_queue[dev_nbr];
   el->time = time;
   el->f_index = index;
-  fq_find_next();
 }
 
 /**
@@ -77,8 +76,6 @@ void fq_add(bs_time_t time, f_index_t index, uint32_t dev_nbr) {
 void fq_remove(uint32_t d){
   f_queue[d].f_index = None;
   f_queue[d].time = TIME_NEVER;
-
-  fq_find_next();
 }
 
 /**
