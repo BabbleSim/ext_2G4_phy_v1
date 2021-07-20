@@ -603,9 +603,11 @@ int main(int argc, char *argv[]) {
     p2G4_handle_next_request(d);
   }
 
+  fq_find_next();
   current_time = fq_get_next_time();
   while ((nbr_active_devs > 0) && (current_time < args.sim_length)) {
     fq_call_next();
+    fq_find_next();
     current_time = fq_get_next_time();
   }
 

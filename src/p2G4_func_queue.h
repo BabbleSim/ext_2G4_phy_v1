@@ -76,6 +76,11 @@ bs_time_t fq_get_next_time();
 void fq_call_next();
 
 /**
+ * Find and update the next function which should be executed
+ */
+void fq_find_next();
+
+/**
  * Remove whichever entry may be queued for this interface
  * (and find the next one)
  *
