@@ -29,7 +29,7 @@ extern "C"{
 /**
  * Open all dump files (as configured from command line)
  */
-void open_dump_files(uint8_t comp_i, uint8_t stop, const char* s,
+void open_dump_files(uint8_t comp_i, uint8_t stop, uint8_t dump_imm, const char* s,
                      const char* p, const uint n_dev_i);
 
 /**

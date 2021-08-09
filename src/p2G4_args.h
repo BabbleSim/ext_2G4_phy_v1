@@ -19,6 +19,7 @@ typedef struct{
   ARG_P_ID
   bs_time_t sim_length;
   bool dont_dump;
+  bool dump_imm;
   bool compare;
   bool stop_on_diff;
   ARG_VERB
