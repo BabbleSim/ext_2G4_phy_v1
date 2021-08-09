@@ -595,7 +595,7 @@ int main(int argc, char *argv[]) {
   RSSI_a = bs_malloc(sizeof(p2G4_rssi_t)*args.n_devs);
   rx_a = bs_malloc(sizeof(rx_status_t)*args.n_devs);
 
-  if (args.dont_dump == 0) open_dump_files(args.compare, args.stop_on_diff, args.s_id, args.p_id, args.n_devs);
+  if (args.dont_dump == 0) open_dump_files(args.compare, args.stop_on_diff, args.dump_imm, args.s_id, args.p_id, args.n_devs);
 
   nbr_active_devs = args.n_devs;
 

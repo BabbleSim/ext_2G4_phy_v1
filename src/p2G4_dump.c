@@ -114,7 +114,7 @@ static FILE* open_file(size_t fname_len, const char* results_path, const char* t
 /**
  * Prepare dumping
  */
-void open_dump_files(uint8_t comp_i, uint8_t stop, const char* s,
+void open_dump_files(uint8_t comp_i, uint8_t stop, uint8_t dump_imm, const char* s,
                      const char* p, const uint n_dev_i){
   char* path;
 
@@ -138,6 +138,12 @@ void open_dump_files(uint8_t comp_i, uint8_t stop, const char* s,
     modemrx_f[i] = open_file(fname_len, path, "ModemRx", p, i);
 
     if (comp == 0) {
+      if (dump_imm) {
+        setvbuf(tx_f[i], NULL, _IOLBF, 0);
+        setvbuf(rx_f[i], NULL, _IOLBF, 0);
+        setvbuf(RSSI_f[i], NULL, _IOLBF, 0);
+        setvbuf(modemrx_f[i], NULL, _IOLBF, 0);
+      }
       dump_tx_heading(tx_f[i]);
       dump_rx_heading(rx_f[i]);
       dump_RSSI_heading(RSSI_f[i]);
