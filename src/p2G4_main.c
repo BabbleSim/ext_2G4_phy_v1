@@ -366,7 +366,9 @@ static void f_rx_payload(uint d){
 
   if (((current_time >= rx_a[d].payload_end) && (rx_a[d].biterrors > 0))
       || (current_time >= rx_a[d].rx_s.abort.abort_time)) {
-    rx_a[d].rx_done_s.packet_size = 0;
+    if (!args.crcerr_data) {
+        rx_a[d].rx_done_s.packet_size = 0;
+    }
     rx_a[d].rx_done_s.status = P2G4_RXSTATUS_CRC_ERROR;
     bs_trace_raw_time(8,"RxDone (CRC error) for device %u\n", d);
     rx_a[d].rx_done_s.end_time = current_time;
