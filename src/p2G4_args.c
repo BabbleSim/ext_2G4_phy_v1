@@ -81,6 +81,7 @@ void p2G4_argsparse(int argc, char *argv[], p2G4_args_t *args)
       { false, false  , true,  "nodump",    "no_dump",  'b', (void*)&args->dont_dump,      NULL,         "Will not dump (or compare) any files"},
       { false, false  , true,  "dump_imm",  "dump_imm", 'b', (void*)&args->dump_imm,       NULL,         "When dumping, do not buffer more than a line"},
       { false, false  , true,  "dump",      "dump",     'b', (void*)NULL,                 dump_found,    "Revert -nodump option (note that the last -nodump/dump set in the command line prevails)"},
+      { false, false  , true,  "crcerr_data","crcerr",  'b', (void*)&args->crcerr_data,    NULL,         "Provide uncorrupted packet to device attempting to receive even if packet has a CRC error or reception is aborted midway (disabled by default)"},
       { false, false  , true,  "c",          "compare", 'b', (void*)&args->compare,        NULL,         "Run in compare mode: will compare instead of dumping"},
       { false, false  , true,  "stop_on_diff","stop",   'b', (void*)&args->stop_on_diff,  stop_found,    "Run in compare mode, but stop as soon as a difference is found"},
       { false, false  , false, "channel",    "channel", 's', (void*)&args->channel_name,  channel_found, "Which channel will be used ( lib/lib_2G4Channel_<channel>.so ). By default NtNcable"},

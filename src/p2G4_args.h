@@ -20,6 +20,7 @@ typedef struct{
   bs_time_t sim_length;
   bool dont_dump;
   bool dump_imm;
+  bool crcerr_data;
   bool compare;
   bool stop_on_diff;
   ARG_VERB
