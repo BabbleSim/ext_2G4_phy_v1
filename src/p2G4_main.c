@@ -276,6 +276,7 @@ static void f_rx_sync(uint d){
     rx_a[d].rx_done_s.packet_size = tx_l_c.tx_list[rx_a[d].tx_nbr].tx_s.packet_size;
     rx_a[d].rx_done_s.status = P2G4_RXSTATUS_INPROGRESS;
 
+    bs_trace_raw_time(8,"Rx Address found for device %u\n", d);
     p2G4_phy_resp_rx_addr_found(d, &rx_a[d].rx_done_s, tx_l_c.tx_list[rx_a[d].tx_nbr].packet);
 
     pc_header_t header;
