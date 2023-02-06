@@ -314,6 +314,7 @@ uint chm_is_packet_synched(tx_l_c_t *tx_l, uint tx_nbr, uint rx_nbr, p2G4_rx_t *
  */
 void chm_RSSImeas(tx_l_c_t *tx_l, p2G4_rssi_t *RSSI_s, p2G4_rssi_done_t* RSSI_meas, uint rx_nbr, bs_time_t current_time){
   rec_status_t *rec_s = &rec_status[rx_nbr];
+  p2G4_rssi_power_t RSSI;
 
   CalculateRxPowerAndISI(tx_l, rec_s, RSSI_s->antenna_gain, UINT_MAX, rx_nbr, current_time);
 
@@ -322,5 +323,6 @@ void chm_RSSImeas(tx_l_c_t *tx_l, p2G4_rssi_t *RSSI_s, p2G4_rssi_done_t* RSSI_me
                       rec_s->rx_pow, tx_l, UINT_MAX);
 
   m_dig_RSSI[rx_nbr](modem_o[rx_nbr], &RSSI_s->radio_params,
-                     rec_s->RSSI_meas_power, &RSSI_meas->RSSI);
+                     rec_s->RSSI_meas_power, &RSSI);
+  RSSI_meas->RSSI = RSSI;
 }
