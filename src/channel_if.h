@@ -34,7 +34,7 @@ int channel_init(int argc, char *argv[], uint n_devs);
  *
  * inputs:
  *  tx_used    : array with n_devs elements, 0: that tx is not transmitting,
- *                                           1: that tx is transmitting,
+ *                                           !=0 that tx is transmitting,
  *               e.g. {0,1,1,0}: devices 1 and 2 are transmitting, device 0 and 3 are not.
  *  tx_list    : array with all transmissions status (the channel can check here the modulation type of the transmitter if necessary)
  *  txnbr      : desired transmitter number (the channel will calculate the ISI only for the desired transmitter)

@@ -49,6 +49,18 @@ void p2G4_phy_resp_rx_addr_found(uint d, p2G4_rx_done_t* rx_done_s, uint8_t *pac
 }
 
 /**
+ * Respond to the device with P2G4_MSG_RXV2_ADDRESSFOUND a
+ * p2G4_rx_done_t and a possible packet of p2G4_rxv2_done_t->packet_size bytes
+ */
+void p2G4_phy_resp_rxv2_addr_found(uint d, p2G4_rxv2_done_t* rx_done_s, uint8_t *packet) {
+  if (pb_phy_is_connected_to_device(&cb_med_state, d)) {
+    pb_send_msg(cb_med_state.ff_ptd[d], P2G4_MSG_RXV2_ADDRESSFOUND,
+                (void *)rx_done_s, sizeof(p2G4_rxv2_done_t));
+    pb_send_payload(cb_med_state.ff_ptd[d], packet, rx_done_s->packet_size);
+  }
+}
+
+/**
  * Respond to the device with P2G4_MSG_RX_END and a p2G4_rx_done_t
  * (note that the packet was already sent out in the address found)
  */
@@ -60,11 +72,44 @@ void p2G4_phy_resp_rx(uint d, p2G4_rx_done_t* rx_done_s) {
 }
 
 /**
- * Respond to the devie with P2G4_MSG_RSSI_END and a p2G4_rssi_done_t
+ * Respond to the device with P2G4_MSG_RX_ENDV2 and a p2G4_rx_donev2_t
+ * (note that the packet was already sent out in the address found)
+ */
+void p2G4_phy_resp_rxv2(uint d, p2G4_rxv2_done_t* rx_done_s) {
+  if (pb_phy_is_connected_to_device(&cb_med_state, d)) {
+    pb_send_msg(cb_med_state.ff_ptd[d], P2G4_MSG_RXV2_END,
+                (void *)rx_done_s, sizeof(p2G4_rxv2_done_t));
+  }
+}
+
+/**
+ * Respond to the device with P2G4_MSG_CCA_END and a p2G4_cca_done_t
+ */
+void p2G4_phy_resp_cca(uint d, p2G4_cca_done_t *sc_done_s) {
+  if (pb_phy_is_connected_to_device(&cb_med_state, d)) {
+    pb_send_msg(cb_med_state.ff_ptd[d], P2G4_MSG_CCA_END,
+                (void *)sc_done_s, sizeof(p2G4_cca_done_t));
+  }
+}
+
+/**
+ * Respond to the device with P2G4_MSG_RSSI_END and a p2G4_rssi_done_t
  */
 void p2G4_phy_resp_RSSI(uint d, p2G4_rssi_done_t* RSSI_done_s) {
   if (pb_phy_is_connected_to_device(&cb_med_state, d)) {
     pb_send_msg(cb_med_state.ff_ptd[d], P2G4_MSG_RSSI_END,
+                (void *)RSSI_done_s, sizeof(p2G4_rssi_done_t));
+  }
+}
+
+/**
+ * Respond to the device with P2G4_MSG_ABORTREVAL_RRSI and a p2G4_rssi_done_t
+ * (during an abort reeval procedure, as a result of the device asking for
+ * an immediate RSSI measurement)
+ */
+void p2G4_phy_resp_IMRSSI(uint d, p2G4_rssi_done_t* RSSI_done_s) {
+  if (pb_phy_is_connected_to_device(&cb_med_state, d)) {
+    pb_send_msg(cb_med_state.ff_ptd[d], P2G4_MSG_IMMRSSI_RRSI_DONE,
                 (void *)RSSI_done_s, sizeof(p2G4_rssi_done_t));
   }
 }
@@ -92,7 +137,9 @@ int p2G4_phy_get_new_abort(uint d, p2G4_abort_t* abort_s) {
     read(cb_med_state.ff_dtp[d], &header, sizeof(header));
 
     if (header == PB_MSG_TERMINATE) {
-      return -1;
+      return PB_MSG_TERMINATE;
+    } else if (header == P2G4_MSG_RERESP_IMMRSSI) {
+      return P2G4_MSG_RERESP_IMMRSSI;
     } else if (header != P2G4_MSG_RERESP_ABORTREEVAL) {
       //if the read failed or the device really wants to disconnect in the
       //middle of an abort (which is not really supported) we try to

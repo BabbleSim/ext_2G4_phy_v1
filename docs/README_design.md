@@ -17,8 +17,6 @@ Where each element keeps a current or future transmission parameters,
 as well as an indication of the transmission being currently active.<br>
 An interface is provided to modify (register) and entry, set it to active,
 and clear it.<br>
-The list also has a function (`txl_find_fitting_tx`) to find a possible
-matching transmission given a reception attempt.<br>
 
 ### Functions queue
 
@@ -43,7 +41,7 @@ as follows:
 
 1. The next operation is requested from the device.
    Depending on what the operation is, either one of the substatemachines events
-   is started (Rx, Tx, Wait, RSSI), or the device interface is disabled
+   is started (Rx, Tx, Wait, RSSI, CCA), or the device interface is disabled
    (DISCONNECT), or the whole simulation is ended (TERMINATE)
 2. The substate machine transitions over time (using the function queue)
    until it eventually comes back to 1.
@@ -60,7 +58,7 @@ Then it will block until receiving the next request from each device.
 
 Note that this is the basic way of working of the Phy:
 It cannot let time pass until it knows what is it that all devices want to do.
-It cannot know if a reception will be succesfull until it know what all others
+It cannot know if a reception will be succesfull until it knows what all others
 devices will be doing during that reception time.
 
 Once it knows what it is that all devices want to do, it can let time pass
@@ -69,4 +67,3 @@ that device requests what it wants next.
 
 It will then repeat this process again and again, until the simulation end time
 has been reached, or all devices have disconnected.
-

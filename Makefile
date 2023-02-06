@@ -9,6 +9,7 @@ include ${BSIM_BASE_PATH}/common/pre.make.inc
 EXE_NAME:=bs_2G4_phy_v1
 SRCS:= src/p2G4_func_queue.c \
        src/p2G4_main.c \
+       src/p2G4_v1_v2_remap.c \
        src/p2G4_com.c \
        src/p2G4_args.c \
        src/p2G4_pending_tx_list.c \

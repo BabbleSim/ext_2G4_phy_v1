@@ -39,8 +39,9 @@ int close_dump_files();
 
 /**
  * Write to file information about a transmission
+ * (v2 API)
  */
-void dump_tx(tx_el_t *tx, uint d);
+void dump_tx(tx_el_t *tx, uint dev_nbr);
 
 /**
  * Write to file information about a completed reception
@@ -51,6 +52,11 @@ void dump_rx(rx_status_t *rx_st, uint8_t* packet, uint d);
  * Write to file information about a completed RSSI measurement
  */
 void dump_RSSImeas(p2G4_rssi_t *RSSI_req, p2G4_rssi_done_t* RSSI_res, uint d);
+
+/**
+ * Write to file information about a completed CCA check
+ */
+void dump_cca(cca_status_t *cca, uint dev_nbr);
 
 /**
  * Write to file information about a modem model invocation

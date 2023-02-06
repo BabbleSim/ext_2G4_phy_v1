@@ -33,7 +33,7 @@ A device is free to advance its simulated time even before it gets
 a response to a request and to pipe several consecutive requests.
 This can be done easily and safely for Tx and Wait requests.
 It would be more difficult though for a device to be able to
-pipe any request after a Rx or RSSI attempt.<br>
+pipe any request after a Rx, RSSI, or CCA attempt.<br>
 But this Phy follows the principle of not responding to a request until the
 time in which that request would have been completed.
 

@@ -24,7 +24,7 @@ void fq_init(uint32_t n_dev){
 
   for (int i = 0 ; i < n_devs; i ++) {
     f_queue[i].time = TIME_NEVER;
-    f_queue[i].f_index = None;
+    f_queue[i].f_index = State_None;
   }
 }
 
@@ -74,7 +74,7 @@ void fq_add(bs_time_t time, f_index_t index, uint32_t dev_nbr) {
  * Remove an element from the queue and reorder it
  */
 void fq_remove(uint32_t d){
-  f_queue[d].f_index = None;
+  f_queue[d].f_index = State_None;
   f_queue[d].time = TIME_NEVER;
 }
 

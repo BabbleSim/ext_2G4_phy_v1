@@ -76,7 +76,7 @@ uint32_t modem_digital_perf_ber(void *this, p2G4_radioparams_t *rx_radioparams, 
  *  SNR            : SNR level at the analog output as calculated by modem_analog_rx()
  *  tx_s           : Parameters of the transmission we are receiving (in case the sync. probability depends on any of them)
  */
-uint32_t modem_digital_perf_sync(void *this, p2G4_radioparams_t *rx_radioparams, double SNR, p2G4_tx_t* tx_s);
+uint32_t modem_digital_perf_sync(void *this, p2G4_radioparams_t *rx_radioparams, double SNR, p2G4_txv2_t* tx_s);
 
 /**
  * Return the digital RSSI value the modem would have produced for this given
