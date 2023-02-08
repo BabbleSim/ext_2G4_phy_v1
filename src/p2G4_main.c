@@ -595,8 +595,8 @@ int main(int argc, char *argv[]) {
 
   bs_random_init(args.rseed);
   txl_create(args.n_devs);
-  RSSI_a = bs_malloc(sizeof(p2G4_rssi_t)*args.n_devs);
-  rx_a = bs_malloc(sizeof(rx_status_t)*args.n_devs);
+  RSSI_a = bs_calloc(args.n_devs, sizeof(p2G4_rssi_t));
+  rx_a = bs_calloc(args.n_devs, sizeof(rx_status_t));
 
   if (args.dont_dump == 0) open_dump_files(args.compare, args.stop_on_diff, args.dump_imm, args.s_id, args.p_id, args.n_devs);
 
