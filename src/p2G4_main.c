@@ -446,7 +446,7 @@ static void f_rx_sync(uint d){
     rx_a[d].biterrors += rx_bit_error_calc(d, rx_a[d].tx_nbr, &rx_a[d]);
   }
 
-  if ( rx_a[d].biterrors >= rx_a[d].rx_s.sync_threshold ) {
+  if ( rx_a[d].biterrors > rx_a[d].rx_s.sync_threshold ) {
     bs_trace_raw_time(8,"Device %u - Sync lost (errors)\n", d);
     fq_add(current_time + 1, Rx_Search_start, d); //Note that we go to start, to search again in between the ongoing transmissions
     return;
