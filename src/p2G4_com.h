@@ -26,6 +26,7 @@ void p2G4_phy_resp_cca(uint d, p2G4_cca_done_t *sc_done_s);
 void p2G4_phy_resp_wait(uint d);
 void p2G4_phy_get(uint d, void* b, size_t size);
 int p2G4_phy_get_new_abort(uint d, p2G4_abort_t* abort);
+int p2G4_phy_get_abort_struct(uint d, p2G4_abort_t* abort_s);
 pc_header_t p2G4_get_next_request(uint d);
 
 #ifdef __cplusplus

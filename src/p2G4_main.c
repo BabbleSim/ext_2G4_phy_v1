@@ -58,6 +58,25 @@ static void f_tx_end(uint d){
   p2G4_handle_next_request(d);
 }
 
+
+static int pick_abort_tail(uint d, p2G4_abort_t *ab, const char* type) {
+  if ( current_time > ab->abort_time ){
+    bs_trace_error_time_line("Device %u requested %s abort in %"PRItime" which has passed\n", d, type, ab->abort_time);
+  }
+  if ( current_time > ab->recheck_time ){ //we allow to recheck just now
+    bs_trace_error_time_line("Device %u requested %s abort recheck in %"PRItime" which has passed\n", d, type, ab->recheck_time);
+  }
+  if ( current_time == ab->recheck_time ){
+    bs_trace_raw_time(4,"Device %u - Note: Abort reevaluation in same time (possible infinite loop in device?)\n", d);
+    /* In this case it may be better to call here pick_and_validate_abort() recursively
+     * As some states may not handle too gracefully this case and still advance 1 microsecond */
+  }
+
+  bs_trace_raw_time(8,"Device %u (%s) requested to reschedule abort,recheck at %"PRItime ",%"PRItime ")\n",
+                    d, type, ab->abort_time, ab->recheck_time);
+
+  return 0;
+}
 /*
  * Pick abort from device.
  * If something goes wrong it returns != 0, and the simulation shall be terminated
@@ -83,19 +102,20 @@ static int pick_and_validate_abort(uint d, p2G4_abort_t *ab, const char* type) {
     }
   } while (ret != 0);
 
-  if ( current_time > ab->abort_time ){
-    bs_trace_error_time_line("Device %u requested %s abort in %"PRItime" which has passed\n", d, type, ab->abort_time);
-  }
-  if ( current_time > ab->recheck_time ){ //we allow to recheck just now
-    bs_trace_error_time_line("Device %u requested %s abort recheck in %"PRItime" which has passed\n", d, type, ab->recheck_time);
-  }
-  if ( current_time == ab->recheck_time ){
-    bs_trace_raw_time(4,"Device %u - Note: Abort reevaluation in same time (possible infinite loop in device?)\n", d);
-  }
+  return pick_abort_tail(d, ab, type);
+}
 
-  bs_trace_raw_time(8,"Device %u (%s) requested to reschedule abort,recheck at %"PRItime ",%"PRItime ")\n",
-                    d, type, ab->abort_time, ab->recheck_time);
-  return 0;
+/*
+ * Pick abort from device after RXV2CONT (during header evaluation)
+ * If something goes wrong it returns != 0, and the simulation shall be terminated
+ */
+static int pick_and_validate_abort_Rxcont(uint d, p2G4_abort_t *ab) {
+
+  bs_trace_raw_time(8,"Device %u - Picking abort during header eval\n", d);
+
+  p2G4_phy_get_abort_struct(d, ab);
+
+  return pick_abort_tail(d, ab, "Rx header");
 }
 
 /**
@@ -484,6 +504,12 @@ static void f_rx_sync(uint d){
       break;
     case P2G4_MSG_RXCONT:
       device_accepted = 1;
+      break;
+    case P2G4_MSG_RXV2CONT:
+      device_accepted = 1;
+      if (pick_and_validate_abort_Rxcont(d, &(rx_a[d].rx_s.abort)) != 0 ){
+        return;
+      }
       break;
     case P2G4_MSG_RXSTOP:
       device_accepted = 0;

@@ -124,6 +124,25 @@ void p2G4_phy_get(uint d, void* b, size_t size) {
   }
 }
 
+
+/**
+ * Get abort structure from device
+ */
+void p2G4_phy_get_abort_struct(uint d, p2G4_abort_t* abort_s) {
+  ssize_t read_size = 0;
+  read_size = read(cb_med_state.ff_dtp[d], abort_s, sizeof(p2G4_abort_t));
+
+  if (read_size != sizeof(p2G4_abort_t)) {
+    //There is some likelihood that a device will crash badly during abort
+    //reevaluation, therefore we try to handle it
+    bs_trace_warning_line(
+        "Low level communication with device %i broken during Abort reevaluation (tried to get %i got %i bytes) (most likely the device was terminated)\n",
+        d, sizeof(p2G4_abort_t), read_size);
+    pb_phy_disconnect_devices(&cb_med_state);
+    bs_trace_error_line("Exiting\n");
+  }
+}
+
 /**
  * Ask the device for a new abort struct for the ongoing Tx or Rx
  */
@@ -132,7 +151,6 @@ int p2G4_phy_get_new_abort(uint d, p2G4_abort_t* abort_s) {
     pc_header_t r_header = P2G4_MSG_ABORTREEVAL;
     write(cb_med_state.ff_ptd[d], &r_header, sizeof(r_header));
 
-    ssize_t read_size = 0;
     pc_header_t header = PB_MSG_DISCONNECT;
     read(cb_med_state.ff_dtp[d], &header, sizeof(header));
 
@@ -146,19 +164,8 @@ int p2G4_phy_get_new_abort(uint d, p2G4_abort_t* abort_s) {
       //handle it gracefully
       pb_phy_free_one_device(&cb_med_state ,d);
     } else {
-      read_size = read(cb_med_state.ff_dtp[d], abort_s, sizeof(p2G4_abort_t));
-    }
-
-    if (read_size != sizeof(p2G4_abort_t)) {
-      //There is some likelihood that a device will crash badly during abort
-      //reevaluation, therefore we try to handle it
-      bs_trace_warning_line(
-          "Low level communication with device %i broken during Abort reevaluation (tried to get %i got %i bytes) (most likely the device was terminated)\n",
-          d, sizeof(p2G4_abort_t), read_size);
-      pb_phy_disconnect_devices(&cb_med_state);
-      bs_trace_error_line("Exiting\n");
+      p2G4_phy_get_abort_struct(d, abort_s);
     }
   }
-
   return 0;
 }
