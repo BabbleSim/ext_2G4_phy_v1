@@ -229,7 +229,7 @@ void p2G4_argsparse(int argc, char *argv[], p2G4_args_t *args)
 
   if ( args->s_id == NULL ) {
     bs_args_print_switches_help(args_struct);
-    bs_trace_error_line("TThe command line option <simulation ID> needs to be set\n");
+    bs_trace_error_line("The command line option <simulation ID> needs to be set\n");
   }
   if ( args->p_id == NULL ){
     args->p_id = default_phy;
