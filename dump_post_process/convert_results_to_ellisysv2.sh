@@ -37,10 +37,10 @@ Mod=$5;
 Packet=$10;
 RSSI=-40;
 if (Mod == 16){
-printf("Item time=%i aa=%s rssi=%i rfchannel=%i phy=1Mbps rawdata=\"%s\"\n",TI,AA,RSSI, RF_CHANNEL, rtrim(Packet));
+printf("Item time=%.0f aa=%s rssi=%i rfchannel=%i phy=1Mbps rawdata=\"%s\"\n",TI,AA,RSSI, RF_CHANNEL, rtrim(Packet));
 }
 if (Mod == 32 || Mod == 33){
-printf("Item time=%i aa=%s rssi=%i rfchannel=%i phy=2Mbps rawdata=\"%s\"\n",TI,AA,RSSI, RF_CHANNEL, rtrim(Packet));
+printf("Item time=%.0f aa=%s rssi=%i rfchannel=%i phy=2Mbps rawdata=\"%s\"\n",TI,AA,RSSI, RF_CHANNEL, rtrim(Packet));
 }
 }'
 
