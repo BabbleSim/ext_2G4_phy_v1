@@ -1,0 +1,220 @@
+#!/usr/bin/env python3
+# Copyright 2019 Oticon A/S
+# Copyright 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# For information on the pcapng format see https://pcapng.com/ & https://www.ietf.org/staging/draft-tuexen-opsawg-pcapng-02.html
+# You may also want to check
+#   https://tshark.dev/
+#   https://wiki.wireshark.org/Development/PcapNg
+
+import time
+import argparse
+import struct
+from csv_common import *
+
+# default max packet length (phdr + access address + pdu + crc)
+SNAPLEN = 512
+
+def write(outfile, *inputs, snaplen = SNAPLEN, basetime=None):
+	buf = bytearray(64)
+	zeroes = bytearray(4)
+
+	# Write pcapng SHB (section header block) (We create just 1 for the whole file)
+	Block_len = 28
+	struct.pack_into('<IIIHHQI', buf, 0,
+			0x0a0d0d0a, # Block Type: SHB
+			Block_len,  # Block Length
+			0x1a2b3c4d, # Byte-Order Magic
+			1,          # version_major
+			0,          # version_minor
+			0xffffffffffffffff, #Section Length
+			# Options:
+				# No options
+			Block_len   # Block Length (repeat)
+			)
+	outfile.write(buf[:Block_len])
+
+	# Interface drescription block for BLE #0
+	Block_len = 32
+	struct.pack_into('<IIHHIHHIHHI', buf, 0,
+			1,         # Block Type : IDB
+			Block_len, # Block Total Length
+			256,       # Link Type: 256 = BLUETOOTH_LE_LL_WITH_PHDR
+			0,         # Reserved (0x0)
+			snaplen,   # Snap length
+			#Options
+			0x9, # if_tsresol
+				0x1, # (1 byte of if_tsresol)
+				0x6, # microsecond resolution
+				#Note 3 bytes of padding just added by storing 0x6 as 32bits
+			0x0, # opt_endofopt
+			0x0, # padding
+			Block_len)
+	outfile.write(buf[:Block_len])
+
+	# Interface drescription block for 15.4 #1
+	Block_len = 32
+	struct.pack_into('<IIHHIHHIHHI', buf, 0,
+			1,         # Block Type : IDB
+			Block_len, # Block Total Length
+			215,       # Link Type: 215 = DLT_IEEE802_15_4_NONASK_PHY ; https://www.tcpdump.org/linktypes.html
+			0,         # Reserved (0x0)
+			snaplen,   # Snap length
+			#Options
+			0x9, # if_tsresol
+				0x1, # (1 byte of if_tsresol)
+				0x6, # microsecond resolution
+				#Note 3 bytes of padding just added by storing 0x6 as 32bits
+			0x0, # opt_endofopt
+			0x0, # padding
+			Block_len)
+	outfile.write(buf[:Block_len])
+
+	# Actual packets:
+
+	if basetime == None:
+		basetime = int(time.time() * 1000000)
+
+	inputs = [ CSVFile(f) for f in inputs ]
+	rows = [ next(cf, None) for cf in inputs ]
+
+	while True:
+		min_ts = None
+		min_idx = None
+		for idx, row in enumerate(rows):
+			if not row:
+				continue
+			ts = row['start_time']
+			if min_ts == None or ts < min_ts:
+				min_ts = ts
+				min_idx = idx
+
+		if min_idx == None:
+			break
+
+		row = rows[min_idx]
+		rows[min_idx] = next(inputs[min_idx], None)
+
+		orig_len = int(row['packet_size'], 10)
+		if orig_len == 0:
+			continue
+		
+		modulation = int(row['modulation'], 10)
+		if modulation == 256: # IEEE 802.15.4-2006 DSS 250kbps O-QPSK PHY
+			is_ble = False
+		else: # Otherwise we just assume it is BLE
+			is_ble = True
+
+		freq = float(row['center_freq'])
+		if freq >= 1.0 and freq < 81.0:
+			rf_channel = int((freq - 1.0) / 2)
+		elif freq >= 2401.0 and freq < 2481.0:
+			rf_channel = int((freq - 2401.0) / 2)
+		else:
+			raise ValueError
+
+		pdu_crc = bytes.fromhex(row['packet'])
+		if len(pdu_crc) != orig_len:
+			raise ValueError
+		if is_ble:
+			orig_len += 14; # 10 bytes phdr + 4 bytes access address
+		else:
+			orig_len += 5; # 4 bytes preamble + 1 bytes address/SFD
+		incl_len = min(orig_len, snaplen)
+		packet_padding = (4 - incl_len % 4) % 4
+
+		access_address = int(row['phy_address'], 16)
+
+		ts = basetime + min_ts
+
+		ts_upper = ts // 2**32;
+		ts_lower = ts % 2**32;
+
+		# Enhanced Packet Block (EPB) (header)
+		EPB_header = 28
+		EPB_tail = 4
+		Block_len = EPB_header + incl_len + packet_padding + EPB_tail
+
+		struct.pack_into('<IIIIIII', buf, 0,
+				6,         # Block Type : EPB
+				Block_len, # Block Total Length
+				0 if is_ble else 1, #Interface ID
+				ts_upper,  # Timestamp Upper 4 bytes
+				ts_lower,  # Timestamp Lower 4 bytes
+				incl_len,  # Captured Packet Length
+				orig_len  # Original Packet Length
+		)
+		outfile.write(buf[:EPB_header])
+
+		# Packet data
+		if is_ble:
+			struct.pack_into('<BbbBIHI', buf, 0,
+				# packet data, incl_len bytes
+				# - phdr, 10 bytes
+				rf_channel,
+				0, # signal power #TODO: Take it from the csv file
+				0, # noise power
+				0, # access address offenses
+				0, # reference access address
+				0, # flags
+				# - le packet (access address + pdu + crc, no preamble)
+				access_address)
+			outfile.write(buf[0:14])
+			outfile.write(pdu_crc[:(incl_len - 14)])
+		else: # 15.4
+			struct.pack_into('<IB', buf, 0,
+				#Header
+				0, # preamble (0)
+				access_address) #SFD
+			outfile.write(buf[:5])
+			#The packet starting from the lenght byte
+			outfile.write(pdu_crc[:(incl_len - 5)])
+
+		outfile.write(zeroes[:packet_padding])
+
+		struct.pack_into('<I', buf, 0,
+				#No options
+				Block_len)
+		outfile.write(buf[:EPB_tail])
+
+def parse_args():
+	parser = argparse.ArgumentParser(description='Convert BabbleSim Phy csv files to pcapng')
+	parser.add_argument(
+			'-er', '--epoch_real',
+			action='store_true',
+			dest='epoch_real',
+			required=False,
+			help='If set, the pcapng timestamps will be offset based on the host time when the simulation was run. Otherwise they are directly the simulation timestamps',
+			)
+	parser.add_argument(
+			'-es', '--epoch_simu',
+			action='store_false',
+			dest='epoch_real',
+			required=False,
+			help='If set, pcapng timestamp are directly the simulation timestamps (default)',
+			)
+	parser.add_argument('-o', '--output',
+			dest='output',
+			metavar='OUTFILE',
+			help='Write to this pcapng file (required)',
+			required=True,
+			type=argparse.FileType(mode='wb'))
+	parser.add_argument(
+			dest='inputs',
+			metavar='INFILE',
+			help='Input csv file(s) (at least one is required)',
+			nargs='+',
+			type=open_input)
+	return parser.parse_args()
+
+args = parse_args()
+
+if (args.epoch_real == True):
+	basetime = int(min([ p[0] for p in args.inputs ]) * 1000000)
+else:
+	basetime = 0
+
+write(args.output, *[ p[1] for p in args.inputs ], basetime=basetime)
+
+# vim: set ts=4 sw=4 noet:
