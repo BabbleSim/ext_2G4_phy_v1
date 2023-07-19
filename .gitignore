@@ -13,3 +13,4 @@ src/test
 /.*project
 .settings/*
 RunResults*
+*/__pycache__/*
