@@ -743,12 +743,12 @@ static void check_valid_abort(p2G4_abort_t *abort, bs_time_t start_time, const c
   }
 
   if (start_time > abort->abort_time) {
-    bs_trace_error_time_line("Device %u wants a %s abort before the %s start (in %"PRItime")\n",
-                             d, type, type, abort->abort_time);
+    bs_trace_error_time_line("Device %u wants a %s abort before the %s start (%"PRItime" > %"PRItime")\n",
+                             d, type, type, start_time, abort->abort_time);
   }
   if (start_time > abort->recheck_time) {
-    bs_trace_error_time_line("Device %u wants a %s abort recheck before %s start (in %"PRItime")\n",
-                             d, type, type, abort->recheck_time);
+    bs_trace_error_time_line("Device %u wants a %s abort recheck before %s start (%"PRItime" > %"PRItime")\n",
+                             d, type, type, start_time, abort->recheck_time);
   }
 }
 
