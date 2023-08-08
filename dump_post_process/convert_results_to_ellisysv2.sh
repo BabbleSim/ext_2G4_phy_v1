@@ -9,7 +9,7 @@
 #./convert_results_to_ellisysv2.sh ../../results/Hola/d_*.Tx.csv > ~/c_drive/Users/alpi/LocalDocs/trial.bttrp
 
 Input_files="$@"
-TMP_FILE="tmp_file_to_merge_for_ellisys"
+TMP_FILE=$(mktemp)
 
 echo -n "" > $TMP_FILE
 for file in $Input_files
