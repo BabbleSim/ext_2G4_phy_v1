@@ -66,9 +66,14 @@ def write(outfile, *inputs, snaplen = SNAPLEN, basetime=None):
 		else:
 			raise ValueError
 
-		pdu_crc = bytes.fromhex(row['packet'])
-		if len(pdu_crc) != orig_len:
-			raise ValueError
+		try:
+			pdu_crc = bytes.fromhex(row['packet'])
+		except: #In case the packet is broken mid byte
+			pdu_crc = bytes.fromhex("00")
+
+		if len(pdu_crc) != orig_len:  # Let's handle this somehow gracefully
+			print("Truncated input file (partial packet), writing partial packet in output")
+			orig_len = len(pdu_crc)
 		orig_len += 5; # 4 bytes preamble + 1 bytes address/SFD
 		incl_len = min(orig_len, snaplen)
 

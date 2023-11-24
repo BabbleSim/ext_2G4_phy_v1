@@ -42,7 +42,11 @@ class CSVFile:
 		row = {}
 		lst = self.reader.__next__()
 		for idx, header in enumerate(self.headers):
-			row[header] = lst[idx]
+			try:
+				row[header] = lst[idx]
+			except IndexError: # The last line may be corrupted, so let's end if we find a corrupted one
+				print("Input file %s truncated mid line, ignoring line"%self.file.name) 
+				return None
 		row['start_time'] = int(row['start_time'], 10)
 		return row
 
