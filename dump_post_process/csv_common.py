@@ -19,7 +19,11 @@ class CSVFile:
 			f = open(f, newline='')
 		self.file = f
 		self.reader = csv.reader(self.file, delimiter=',', lineterminator='\n')
-		headers = self.reader.__next__()
+		try:
+			headers = self.reader.__next__()
+		except StopIteration:
+			print("File %s is fully empty"%self.file.name)
+			headers = [];
 		for (key, alt) in KEY_ALTERNATIVES:
 			if not key in headers and alt in headers:
 				headers[headers.index(alt)] = key
