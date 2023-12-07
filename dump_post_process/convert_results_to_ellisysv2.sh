@@ -15,6 +15,7 @@ echo -n "" > $TMP_FILE
 for file in $Input_files
 do
   tail -n+2 $file >> $TMP_FILE
+  echo -e "\n" >> $TMP_FILE
 done
 
 sort -g $TMP_FILE | awk '
@@ -36,6 +37,7 @@ AA=$4;
 Mod=$5;
 Packet=$10;
 RSSI=-40;
+if ((NF != 10) || (length(Packet) == 0)) { next }
 if (Mod == 16){
 printf("Item time=%.0f aa=%s rssi=%i rfchannel=%i phy=1Mbps rawdata=\"%s\"\n",TI,AA,RSSI, RF_CHANNEL, rtrim(Packet));
 }
