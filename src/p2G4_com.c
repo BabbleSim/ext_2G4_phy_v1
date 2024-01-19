@@ -14,8 +14,9 @@ static pb_phy_state_t cb_med_state = {0};
 #pragma GCC diagnostic ignored "-Wunused-result"
 
 void p2G4_phy_initcom(const char* s, const char* p, uint n){
-  if (pb_phy_initcom(&cb_med_state, s, p, n))
+  if (pb_phy_initcom(&cb_med_state, s, p, n)) {
     bs_trace_error_line("Cannot establish communication with devices\n");
+  }
 }
 
 void p2G4_phy_disconnect_all_devices(){
