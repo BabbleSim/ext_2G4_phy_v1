@@ -1070,8 +1070,6 @@ int main(int argc, char *argv[]) {
 /*
  * TODO:
  *
- * Enable Txv2, Rxv2 & CCA dumps
- *
  * Future features (see doc/Current_API_shortcommings.txt):
  * implement prelocked_tx
  * implement forced_packet_duration

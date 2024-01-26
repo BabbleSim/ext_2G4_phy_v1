@@ -199,9 +199,9 @@ void open_dump_files(uint8_t comp_i, uint8_t stop, uint8_t dump_imm, const char*
   for (int i = 0; i < n_dev; i++) {
     txv1_f[i] = open_file(fname_len, path, "Tx", p, i);
     rxv1_f[i] = open_file(fname_len, path, "Rx", p, i);
-    //txv2_f[i] = open_file(fname_len, path, "Txv2", p, i);
-    //rxv2_f[i] = open_file(fname_len, path, "Rxv2", p, i);
-    //CCA_f[i]  = open_file(fname_len, path, "CCA", p, i);
+    txv2_f[i] = open_file(fname_len, path, "Txv2", p, i);
+    rxv2_f[i] = open_file(fname_len, path, "Rxv2", p, i);
+    CCA_f[i]  = open_file(fname_len, path, "CCA", p, i);
     RSSI_f[i] = open_file(fname_len, path, "RSSI", p, i);
     modemrx_f[i] = open_file(fname_len, path, "ModemRx", p, i);
 
