@@ -465,7 +465,8 @@ static int rx_bit_error_calc(uint d, uint tx_nbr, rx_status_t *rx_st) {
   int biterrors = 0;
   rx_error_calc_state_t *st = &rx_st->err_calc_state;
   if (st->us_to_next_calc-- <= 0) {
-    if ( ( tx_l_c.used[tx_nbr] & TXS_PACKET_ONGOING ) == 0 ) {
+    if ( (( tx_l_c.used[tx_nbr] & TXS_PACKET_ONGOING ) == 0)
+        || (tx_l_c.tx_list[tx_nbr].tx_s.coding_rate != rx_st->rx_s.coding_rate)) {
       biterrors = st->errorspercalc;
     } else {
       biterrors = chm_bit_errors(&tx_l_c, tx_nbr, d, &rx_st->rx_s, current_time, st->errorspercalc);
@@ -1104,6 +1105,5 @@ int main(int argc, char *argv[]) {
  *
  * Future features (see doc/Current_API_shortcommings.txt):
  * implement forced_packet_duration
- * implement support for != coding_rate in Tx and Rx
  * implement support for immediate bit error masks
  */
