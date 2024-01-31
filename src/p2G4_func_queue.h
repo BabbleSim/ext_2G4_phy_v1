@@ -22,17 +22,17 @@ typedef enum {
   Wait_Done,
   Tx_End,
   Tx_Packet_End,
+  Rx_CCA_meas,
   RSSI_Meas,
   Rx_Found,
   Rx_Sync,
   Rx_Header,
   Rx_Payload,
   Tx_Abort_Reeval,
-  Tx_Start,
   Tx_Packet_Start,
   Rx_Search_reeval,
   Rx_Search_start,
-  Rx_CCA_meas,
+  Tx_Start, /* For a piggybacking/prelocked Rx to work without pretruncation, we need its Tx to start first */
   N_funcs //Minor issue: one too many
 } f_index_t;
 //Note: We need to use these indexes, instead of just keeping the function pointers

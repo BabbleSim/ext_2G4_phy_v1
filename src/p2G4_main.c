@@ -310,6 +310,36 @@ static void rx_possible_abort_recheck(uint d, rx_status_t *rx_st, bool scanning)
   }
 }
 
+
+static int prelock_check(uint d, rx_status_t *rx_status) {
+  if (rx_status->tx_nbr == -1) {
+    bs_trace_warning_time_line("Device %u attempted to continue a Rx with prelocked_tx==true,"
+                               "but there was no previous reception lock, attempting new search\n", d);
+    rx_status->rx_s.prelocked_tx = false;
+  } else {
+    uint *used = tx_l_c.used;
+    if (!(used[rx_status->tx_nbr] & TXS_PACKET_ONGOING)) {
+      /* This could either be a design error or a possible abort of the transmitter right
+       * in between piggybacking packets */
+      bs_trace_raw_time_line(3,"Device %u attempted to continue a Rx with prelocked_tx==true,"
+                               "but the transmitter is not active anymore, attempting new search\n", d);
+      rx_status->rx_s.prelocked_tx = false;
+      rx_status->tx_nbr = -1;
+    } else if (current_time > tx_l_c.tx_list[rx_status->tx_nbr].tx_s.start_packet_time + rx_status->rx_s.acceptable_pre_truncation) {
+      bs_trace_raw_time_line(3,"Device %u attempted to continue a Rx with prelocked_tx==true,"
+                               "but the transmitter started too long ago "
+                               "(current_time=%"PRItime"; start_packet_time=%"PRItime"; "
+                               "acceptable_pre_truncation=%u)\n", d,
+                               current_time,
+                               tx_l_c.tx_list[rx_status->tx_nbr].tx_s.start_packet_time,
+                               rx_status->rx_s.acceptable_pre_truncation);
+      rx_status->rx_s.prelocked_tx = false;
+      rx_status->tx_nbr = -1;
+    }
+  }
+  return rx_status->tx_nbr;
+}
+
 static void f_rx_search_start(uint d) {
   int tx_d;
   rx_status_t *rx_status;
@@ -319,8 +349,12 @@ static void f_rx_search_start(uint d) {
 
   bs_trace_raw_time(8,"Device %u - Starting Rx\n", d);
 
-  /* Let's check for possible ongoing transmissions we may still catch */
-  tx_d = find_fitting_tx(rx_status);
+  if (rx_status->rx_s.prelocked_tx) {
+    tx_d = prelock_check(d, rx_status);
+  } else {
+    /* Let's check for possible ongoing transmissions we may still catch */
+    tx_d = find_fitting_tx(rx_status);
+  }
 
   if (tx_d >= 0) {
     rx_status->tx_nbr = tx_d;
@@ -403,7 +437,8 @@ static void f_rx_found(uint d){
    *   having its choice preselected would be better.
    *   (This flaw existed also in the v1 API FSM version)
    */
-  if ( chm_is_packet_synched( &tx_l_c, tx_d, d,  &rx_status->rx_s, current_time ) )
+  if ((rx_status->rx_s.prelocked_tx)
+      || (chm_is_packet_synched( &tx_l_c, tx_d, d,  &rx_status->rx_s, current_time ) ))
   {
     p2G4_txv2_t *tx_s = &tx_l_c.tx_list[tx_d].tx_s;
     rx_status->sync_end    = tx_s->start_packet_time + BS_MAX((int)rx_status->rx_s.pream_and_addr_duration - 1,0);
@@ -831,18 +866,15 @@ static void prepare_rx_common(uint d, p2G4_rxv2_t *rxv2_s){
   bs_trace_raw_time(8,"Device %u wants to Rx in %"PRItime " (abort,recheck at %"PRItime ",%"PRItime ")\n",
                     d, rxv2_s->start_time, rxv2_s->abort.abort_time, rxv2_s->abort.recheck_time);
 
-  if (rxv2_s->prelocked_tx != 0) {
-    bs_trace_error_time_line("Device %u - Prelocked Tx not yet supported, must be set to 0 (was %u)\n",
-                             d, rxv2_s->prelocked_tx);
-  }
-
   //Initialize the reception status
   memcpy(&rx_a[d].rx_s, rxv2_s, sizeof(p2G4_rxv2_t));
   rx_a[d].scan_end = rx_a[d].rx_s.start_time + rx_a[d].rx_s.scan_duration - 1;
   rx_a[d].sync_end = 0;
   rx_a[d].header_end = 0;
   rx_a[d].payload_end = 0;
-  rx_a[d].tx_nbr = -1;
+  if (!rxv2_s->prelocked_tx) {
+    rx_a[d].tx_nbr = -1;
+  }
   rx_a[d].biterrors = 0;
   memset(&rx_a[d].rx_done_s, 0, sizeof(p2G4_rxv2_done_t));
   if ( rxv2_s->abort.abort_time < rx_a[d].scan_end ) {
@@ -1071,7 +1103,6 @@ int main(int argc, char *argv[]) {
  * TODO:
  *
  * Future features (see doc/Current_API_shortcommings.txt):
- * implement prelocked_tx
  * implement forced_packet_duration
  * implement support for != coding_rate in Tx and Rx
  * implement support for immediate bit error masks
