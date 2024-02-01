@@ -411,6 +411,7 @@ static void f_rx_found(uint d){
     rx_status->payload_end = tx_s->end_packet_time;
     rx_status->biterrors = 0;
     rx_status->rx_done_s.phy_address = tx_s->phy_address;
+    rx_status->rx_done_s.coding_rate = tx_s->coding_rate;
     rx_status->sync_start = tx_s->start_packet_time + rx_status->rx_s.acceptable_pre_truncation;
     bs_trace_raw_time(8,"Device %u - Matched Tx %u\n", d, tx_d);
 
