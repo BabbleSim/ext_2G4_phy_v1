@@ -135,6 +135,7 @@ typedef struct {
   p2G4_address_t phy_address[16];
   rx_error_calc_state_t err_calc_state;
   bool v1_request;
+  bool tx_lost;
 } rx_status_t;
 
 /**

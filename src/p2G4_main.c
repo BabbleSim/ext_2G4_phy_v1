@@ -448,6 +448,7 @@ static void f_rx_found(uint d){
     rx_status->rx_done_s.phy_address = tx_s->phy_address;
     rx_status->rx_done_s.coding_rate = tx_s->coding_rate;
     rx_status->sync_start = tx_s->start_packet_time + rx_status->rx_s.acceptable_pre_truncation;
+    rx_status->tx_lost = false;
     bs_trace_raw_time(8,"Device %u - Matched Tx %u\n", d, tx_d);
 
     bs_time_t next_time = BS_MIN(rx_status->sync_start, rx_status->rx_s.abort.recheck_time);
@@ -465,7 +466,11 @@ static int rx_bit_error_calc(uint d, uint tx_nbr, rx_status_t *rx_st) {
   int biterrors = 0;
   rx_error_calc_state_t *st = &rx_st->err_calc_state;
   if (st->us_to_next_calc-- <= 0) {
-    if ( (( tx_l_c.used[tx_nbr] & TXS_PACKET_ONGOING ) == 0)
+    if (( tx_l_c.used[tx_nbr] & TXS_PACKET_ONGOING ) == 0) {
+      rx_st->tx_lost = true;
+    }
+
+    if ( rx_st->tx_lost
         || (tx_l_c.tx_list[tx_nbr].tx_s.coding_rate != rx_st->rx_s.coding_rate)) {
       biterrors = st->errorspercalc;
     } else {
@@ -867,35 +872,39 @@ static void prepare_rx_common(uint d, p2G4_rxv2_t *rxv2_s){
   bs_trace_raw_time(8,"Device %u wants to Rx in %"PRItime " (abort,recheck at %"PRItime ",%"PRItime ")\n",
                     d, rxv2_s->start_time, rxv2_s->abort.abort_time, rxv2_s->abort.recheck_time);
 
+  rx_status_t *rx_status = &rx_a[d];
+
   //Initialize the reception status
-  memcpy(&rx_a[d].rx_s, rxv2_s, sizeof(p2G4_rxv2_t));
-  rx_a[d].scan_end = rx_a[d].rx_s.start_time + rx_a[d].rx_s.scan_duration - 1;
-  rx_a[d].sync_end = 0;
-  rx_a[d].header_end = 0;
-  rx_a[d].payload_end = 0;
+  memcpy(&rx_status->rx_s, rxv2_s, sizeof(p2G4_rxv2_t));
+  rx_status->scan_end = rx_status->rx_s.start_time + rx_status->rx_s.scan_duration - 1;
+  rx_status->sync_end = 0;
+  rx_status->header_end = 0;
+  rx_status->payload_end = 0;
   if (!rxv2_s->prelocked_tx) {
-    rx_a[d].tx_nbr = -1;
+    rx_status->tx_nbr = -1;
   }
-  rx_a[d].biterrors = 0;
-  memset(&rx_a[d].rx_done_s, 0, sizeof(p2G4_rxv2_done_t));
-  if ( rxv2_s->abort.abort_time < rx_a[d].scan_end ) {
-    rx_a[d].scan_end = rxv2_s->abort.abort_time - 1;
+  rx_status->biterrors = 0;
+  memset(&rx_status->rx_done_s, 0, sizeof(p2G4_rxv2_done_t));
+  if ( rxv2_s->abort.abort_time < rx_status->scan_end ) {
+    rx_status->scan_end = rxv2_s->abort.abort_time - 1;
   }
 
   if (rxv2_s->error_calc_rate % 1000000 == 0) {
-    rx_a[d].err_calc_state.errorspercalc = rxv2_s->error_calc_rate / 1000000;
-    rx_a[d].err_calc_state.rate_uspercalc = 1;
-    rx_a[d].err_calc_state.us_to_next_calc = 0;
+    rx_status->err_calc_state.errorspercalc = rxv2_s->error_calc_rate / 1000000;
+    rx_status->err_calc_state.rate_uspercalc = 1;
+    rx_status->err_calc_state.us_to_next_calc = 0;
   } else if (1000000 % rxv2_s->error_calc_rate == 0) {
-    rx_a[d].err_calc_state.errorspercalc = 1;
-    rx_a[d].err_calc_state.rate_uspercalc = 1000000 / rxv2_s->error_calc_rate;
-    rx_a[d].err_calc_state.us_to_next_calc = 0;
+    rx_status->err_calc_state.errorspercalc = 1;
+    rx_status->err_calc_state.rate_uspercalc = 1000000 / rxv2_s->error_calc_rate;
+    rx_status->err_calc_state.us_to_next_calc = 0;
   } else {
     bs_trace_error_time_line("The device %u requested a reception with an error calc rate "
                              "of %u times per s, but only integer multiples or integer dividers of 1MHz "
                              "are supported so far (for ex. 3MHz, 1MHz, 250KHz, 62.5KHz)\n",
                              d, rxv2_s->error_calc_rate);
   }
+
+  rx_status->tx_lost = false;
 
   fq_add(rxv2_s->start_time, Rx_Search_start, d);
 }
