@@ -472,7 +472,7 @@ static int rx_bit_error_calc(uint d, uint tx_nbr, rx_status_t *rx_st) {
 
     if ( rx_st->tx_lost
         || (tx_l_c.tx_list[tx_nbr].tx_s.coding_rate != rx_st->rx_s.coding_rate)) {
-      biterrors = st->errorspercalc;
+      biterrors = bs_random_Binomial(st->errorspercalc, RAND_PROB_1/2);
     } else {
       biterrors = chm_bit_errors(&tx_l_c, tx_nbr, d, &rx_st->rx_s, current_time, st->errorspercalc);
     }
