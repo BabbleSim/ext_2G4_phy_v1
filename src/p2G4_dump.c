@@ -218,7 +218,7 @@ void open_dump_files(uint8_t comp_i, uint8_t stop, uint8_t dump_imm, const char*
       dump_txv2_heading(txv2_f[i]);
       dump_rxv2_heading(rxv2_f[i]);
       dump_RSSI_heading(RSSI_f[i]);
-      dump_CCA_heading(RSSI_f[i]);
+      dump_CCA_heading(CCA_f[i]);
       dump_modemrx_heading(modemrx_f[i]);
     }
   }
