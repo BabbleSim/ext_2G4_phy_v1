@@ -269,12 +269,7 @@ uint chm_bit_errors(tx_l_c_t *tx_l, uint tx_nbr, uint rx_nbr, p2G4_rxv2_t *rx_s 
     dump_ModemRx(current_time, tx_nbr, rx_nbr, n_devs, 1, &rx_s->radio_params, status, tx_l );
   } //otherwise all we had calculated before still applies
 
-
-  uint bit_errors = 0;
-  for (uint ctr = 0; ctr < n_calcs ; ctr++){
-    bit_errors += bs_random_Bern(status->BER);
-  }
-  return bit_errors;
+  return bs_random_Binomial(n_calcs, status->BER);
 }
 
 /**
