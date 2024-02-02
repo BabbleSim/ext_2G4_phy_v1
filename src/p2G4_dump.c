@@ -715,5 +715,5 @@ void dump_ModemRx(bs_time_t CurrentTime, uint tx_nbr, uint dev_nbr, uint ndev, u
   print_or_compare(&modemrx_f[dev_nbr],
                    to_print, size, dev_nbr, "ModemRx",
                    &stats[dev_nbr].nbr_modemrx_er,
-                   stats[dev_nbr].nbr_modemrx_er);
+                   stats[dev_nbr].nbr_modemrx);
 }
