@@ -648,8 +648,8 @@ void dump_cca(cca_status_t *cca, uint dev_nbr) {
       p2G4_freq_to_d(cca->req.radio_params.center_freq),
       p2G4_power_to_d(cca->req.antenna_gain),
 
-      p2G4_power_to_d(cca->req.mod_threshold),
-      p2G4_power_to_d(cca->req.rssi_threshold),
+      p2G4_RSSI_value_to_dBm(cca->req.mod_threshold),
+      p2G4_RSSI_value_to_dBm(cca->req.rssi_threshold),
       cca->req.stop_when_found,
 
       cca->req.abort.abort_time, cca->req.abort.recheck_time,
