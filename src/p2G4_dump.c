@@ -67,7 +67,7 @@ static void dump_txv2_heading(FILE *file){
   fprintf(file,
             "start_tx_time,end_tx_time,"
             "start_packet_time, end_packet_time, center_freq,"
-            "phy_address,modulation,power_level,abort_time,"
+            "phy_address,modulation,coding_rate,power_level,abort_time,"
             "recheck_time,packet_size,packet\n");
 }
 
@@ -92,7 +92,9 @@ static void dump_rxv2_heading(FILE *file){
                "center_freq,antenna_gain,"
                "acceptable_pre_truncation,sync_threshold,header_threshold,"
                "pream_and_addr_duration,"
-               "header_duration,error_calc_rate,resp_type,"
+               "header_duration,error_calc_rate,"
+               "forced_packet_duration,coding_rate,prelocked_tx,"
+               "resp_type,"
                "abort_time,recheck_time,"
                "tx_nbr,matched_addr,biterrors,sync_end,header_end,"
                "payload_end,rx_time_stamp,status,RSSI,"
@@ -397,6 +399,7 @@ void dump_txv2(tx_el_t *tx, uint dev_nbr) {
                     "%"PRItime",%"PRItime","
                     "%.6f,"
                     "0x%08X,%u,"
+                    "%u,"
                     "%.6f,"
                     "%"PRItime",%"PRItime","
                     "%u,",
@@ -404,6 +407,7 @@ void dump_txv2(tx_el_t *tx, uint dev_nbr) {
                     txs->start_packet_time, txs->end_packet_time,
                     p2G4_freq_to_d(txs->radio_params.center_freq),
                     (uint32_t)txs->phy_address, txs->radio_params.modulation,
+                    txs->coding_rate,
                     p2G4_power_to_d(txs->power_level),
                     txs->abort.abort_time, txs->abort.recheck_time,
                     txs->packet_size);
@@ -492,7 +496,7 @@ void dump_rxv2(rx_status_t *rx_st, uint8_t* packet, uint dev_nbr){
 
   stats[dev_nbr].nbr_rxv2++;
 
-  const uint dbufsi = 2048; //The print below adds to 591 + commas, + a lot of margin for careless expansion
+  const uint dbufsi = 2048; //The print below adds to 613 + commas, + a lot of margin for careless expansion
   size_t size = dbufsi + rx_st->rx_done_s.packet_size*3;
 
   char to_print[ size + 1];
@@ -524,6 +528,10 @@ void dump_rxv2(rx_status_t *rx_st, uint8_t* packet, uint dev_nbr){
                     "%u,%u,"   //10+10
                     "%u,"      //10
                     "%u,%u,"   //10+10
+
+                    "%u,%u,"   //10+10
+                    "%u,"      //3"
+
                     "%u,"      //3
                     "%"PRItime",%"PRItime"," //20+20
 
@@ -547,6 +555,11 @@ void dump_rxv2(rx_status_t *rx_st, uint8_t* packet, uint dev_nbr){
                     req->sync_threshold, req->header_threshold,
                     req->pream_and_addr_duration,
                     req->header_duration, req->error_calc_rate,
+
+                    req->forced_packet_duration,
+                    req->coding_rate,
+                    req->prelocked_tx,
+
                     req->resp_type,
                     req->abort.abort_time, req->abort.recheck_time,
 
