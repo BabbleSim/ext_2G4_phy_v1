@@ -37,7 +37,7 @@ void fq_register_func(f_index_t type, queable_f fptr) {
  * Based on the following order, from left to right:
  *  time (lower first), function index (higher first), device number (lower first)
  * TOOPT: The whole function queue is implemented in a simple/naive way,
- *        which is perfectly for simulations with a few devices.
+ *        which is perfectly fine for simulations with a few devices.
  *        But, if there is many devices, this would be quite slow.
  */
 void fq_find_next(){
@@ -54,7 +54,6 @@ void fq_find_next(){
     } else if (el->time == chosen_f_time) {
       if (el->f_index > f_queue[next_d].f_index) {
         next_d = i;
-        chosen_f_time = el->time;
         continue;
       }
     }
