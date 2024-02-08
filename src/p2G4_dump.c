@@ -96,7 +96,7 @@ static void dump_rxv2_heading(FILE *file){
                "forced_packet_duration,coding_rate,prelocked_tx,"
                "resp_type,"
                "abort_time,recheck_time,"
-               "tx_nbr,matched_addr,biterrors,sync_end,header_end,"
+               "tx_nbr,matched_addr,tx_coding_rate,biterrors,sync_end,header_end,"
                "payload_end,rx_time_stamp,status,RSSI,"
                "packet_size,packet\n");
 }
@@ -496,7 +496,7 @@ void dump_rxv2(rx_status_t *rx_st, uint8_t* packet, uint dev_nbr){
 
   stats[dev_nbr].nbr_rxv2++;
 
-  const uint dbufsi = 2048; //The print below adds to 613 + commas, + a lot of margin for careless expansion
+  const uint dbufsi = 2048; //The print below adds to 623 + commas, + a lot of margin for careless expansion
   size_t size = dbufsi + rx_st->rx_done_s.packet_size*3;
 
   char to_print[ size + 1];
@@ -529,7 +529,8 @@ void dump_rxv2(rx_status_t *rx_st, uint8_t* packet, uint dev_nbr){
                     "%u,"      //10
                     "%u,%u,"   //10+10
 
-                    "%u,%u,"   //10+10
+                    "%u,"      //10
+                    "%u,"      //10
                     "%u,"      //3"
 
                     "%u,"      //3
@@ -537,6 +538,7 @@ void dump_rxv2(rx_status_t *rx_st, uint8_t* packet, uint dev_nbr){
 
                     "%i,"      //10
                     "0x%08"PRIx64"," //16
+                    "%u,"      //10
                     "%u,"      //10
                     "%"PRItime"," //20
                     "%"PRItime"," //20
@@ -565,6 +567,7 @@ void dump_rxv2(rx_status_t *rx_st, uint8_t* packet, uint dev_nbr){
 
                     rx_st->tx_nbr,
                     resp->phy_address,
+                    resp->coding_rate,
                     rx_st->biterrors,
                     rx_st->sync_end,
                     rx_st->header_end,
