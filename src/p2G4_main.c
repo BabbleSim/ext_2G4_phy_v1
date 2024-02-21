@@ -876,7 +876,11 @@ static void prepare_rx_common(uint d, p2G4_rxv2_t *rxv2_s){
 
   //Initialize the reception status
   memcpy(&rx_status->rx_s, rxv2_s, sizeof(p2G4_rxv2_t));
-  rx_status->scan_end = rx_status->rx_s.start_time + rx_status->rx_s.scan_duration - 1;
+  if (rx_status->rx_s.scan_duration < UINT32_MAX) {
+    rx_status->scan_end = rx_status->rx_s.start_time + rx_status->rx_s.scan_duration - 1;
+  } else {
+    rx_status->scan_end = TIME_NEVER;
+  }
   rx_status->sync_end = 0;
   rx_status->header_end = 0;
   rx_status->payload_end = 0;
