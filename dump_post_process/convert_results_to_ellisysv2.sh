@@ -31,13 +31,28 @@ ItemFormat:LE version=1.1")
 
 }
 {
+Packet=$10;
+if ((NF != 10) || (length(Packet) == 0)) { next } # Corrupted line
+
+Mod=$5;
+Packet_size=$9;
+
+if ((Mod == 80) && (Packet_size > 4)) { # BLE Coded Phy - FEC2 part
+  if (CI==0) {
+     CR=8;
+  } else {
+     CR=2;
+  }
+  printf("Item time=%.0f aa=%s rssi=%i rfchannel=%i phy=Coded coding=Coded%i rawdata=\"%s\"\n", TI, AA, RSSI, RF_CHANNEL, CR, rtrim(Packet));
+  next
+}
 TI = $1 * 1000;
 RF_CHANNEL=rfchannel($3);
 AA=$4;
-Mod=$5;
-Packet=$10;
 RSSI=-40;
-if ((NF != 10) || (length(Packet) == 0)) { next }
+if (length(Packet) >= 2) {
+  CI=strtonum(substr(Packet, 1, 2));
+}
 if (Mod == 16){
 printf("Item time=%.0f aa=%s rssi=%i rfchannel=%i phy=1Mbps rawdata=\"%s\"\n",TI,AA,RSSI, RF_CHANNEL, rtrim(Packet));
 }
