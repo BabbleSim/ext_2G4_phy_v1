@@ -7,7 +7,9 @@
 #define P2G4_MODEM_IF
 
 #include "bs_types.h"
+#include "bs_pc_2G4_types.h"
 #include "p2G4_pending_tx_rx_list.h"
+#include "modem_if_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,10 +60,10 @@ void modem_analog_rx(void *this, p2G4_radioparams_t *rx_radioparams, double *Out
  *
  * inputs:
  *  this           : Pointer to this modem object
- *  rx_radioparams : Radio parameters/configuration of this receiver for this Rx/RSSI measurement
+ *  rx_modemparams : Modem parameters/configuration of this receiver for this Rx/RSSI measurement
  *  SNR            : SNR level at the analog output as calculated by modem_analog_rx()
  */
-uint32_t modem_digital_perf_ber(void *this, p2G4_radioparams_t *rx_radioparams, double SNR);
+uint32_t modem_digital_perf_ber(void *this, p2G4_modemdigparams_t *rx_modemparams, double SNR);
 
 /**
  * Return the probability of the packet sync'ing ([0.. RAND_PROB_1]) for a given SNR and
@@ -72,11 +74,11 @@ uint32_t modem_digital_perf_ber(void *this, p2G4_radioparams_t *rx_radioparams, 
  *
  * inputs:
  *  this           : Pointer to this modem object
- *  rx_radioparams : Radio parameters/configuration of this receiver for this Rx/RSSI measurement
+ *  rx_modemparams : Modem parameters/configuration of this receiver for this Rx/RSSI measurement
  *  SNR            : SNR level at the analog output as calculated by modem_analog_rx()
  *  tx_s           : Parameters of the transmission we are receiving (in case the sync. probability depends on any of them)
  */
-uint32_t modem_digital_perf_sync(void *this, p2G4_radioparams_t *rx_radioparams, double SNR, p2G4_txv2_t* tx_s);
+uint32_t modem_digital_perf_sync(void *this, p2G4_modemdigparams_t *rx_modemparams, double SNR, p2G4_txv2_t* tx_s);
 
 /**
  * Return the digital RSSI value the modem would have produced for this given

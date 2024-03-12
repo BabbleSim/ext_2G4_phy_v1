@@ -56,8 +56,8 @@ static cha_delete_f channel_delete;
 typedef void*  (*m_init_f)(int argc, char *argv[], uint dev_nbr, uint n_devs);
 typedef void   (*m_delete_f)(void *m_obj);
 typedef void   (*m_analog_rx_f)(void *m_obj, p2G4_radioparams_t *radio_params, double *OutputSNR,double *Output_RSSI_power_level, double *rx_pow, tx_l_c_t *txl_c, uint tx_nbr);
-typedef uint32_t (*m_dig_perf_sync_f)(void *m_obj, p2G4_radioparams_t *radio_params, double SNR, p2G4_txv2_t* tx_s);
-typedef uint32_t (*m_dig_perf_ber_f)(void *m_obj, p2G4_radioparams_t *radio_params, double SNR);
+typedef uint32_t (*m_dig_perf_sync_f)(void *m_obj, p2G4_modemdigparams_t *modem_params, double SNR, p2G4_txv2_t* tx_s);
+typedef uint32_t (*m_dig_perf_ber_f)(void *m_obj, p2G4_modemdigparams_t *modem_params, double SNR);
 typedef uint32_t (*m_dig_RSSI_f)(void *m_obj, p2G4_radioparams_t *radio_params, double RSSI_power_level, p2G4_rssi_power_t* RSSI);
 
 static m_init_f          *m_init      = NULL;
@@ -248,7 +248,7 @@ static inline void combine_SNR(rec_status_t *rx_status ) {
  * and received by device <rx_nbr>.
  * Where <n_calcs> error samples are taken, each with the same parameters
  */
-uint chm_bit_errors(tx_l_c_t *tx_l, uint tx_nbr, uint rx_nbr, p2G4_rxv2_t *rx_s , bs_time_t current_time, uint n_calcs){
+uint chm_bit_errors(tx_l_c_t *tx_l, uint tx_nbr, uint rx_nbr, rx_status_t *rx_st , bs_time_t current_time, uint n_calcs){
 
   rec_status_t *status = &rec_status[rx_nbr];
 
@@ -258,15 +258,15 @@ uint chm_bit_errors(tx_l_c_t *tx_l, uint tx_nbr, uint rx_nbr, p2G4_rxv2_t *rx_s 
     status->last_rx_ctr = status->rx_ctr;
 
     //we need to recalculate things
-    CalculateRxPowerAndISI(tx_l, status, rx_s->antenna_gain, tx_nbr, rx_nbr, current_time);
+    CalculateRxPowerAndISI(tx_l, status, rx_st->rx_s.antenna_gain, tx_nbr, rx_nbr, current_time);
 
-    m_analog_rx[rx_nbr](modem_o[rx_nbr], &rx_s->radio_params, &status->SNR_analog_o, &status->RSSI_meas_power, status->rx_pow, tx_l, tx_nbr);
+    m_analog_rx[rx_nbr](modem_o[rx_nbr], &rx_st->rx_s.radio_params, &status->SNR_analog_o, &status->RSSI_meas_power, status->rx_pow, tx_l, tx_nbr);
 
     combine_SNR(status);
 
-    status->BER = m_dig_perf_ber[rx_nbr](modem_o[rx_nbr], &rx_s->radio_params, status->SNR_total);
+    status->BER = m_dig_perf_ber[rx_nbr](modem_o[rx_nbr], &rx_st->rx_modem_params, status->SNR_total);
 
-    dump_ModemRx(current_time, tx_nbr, rx_nbr, n_devs, 1, &rx_s->radio_params, status, tx_l );
+    dump_ModemRx(current_time, tx_nbr, rx_nbr, n_devs, 1, &rx_st->rx_modem_params, status, tx_l );
   } //otherwise all we had calculated before still applies
 
   return bs_random_Binomial(n_calcs, status->BER);
@@ -275,7 +275,7 @@ uint chm_bit_errors(tx_l_c_t *tx_l, uint tx_nbr, uint rx_nbr, p2G4_rxv2_t *rx_s 
 /**
  * Is the packet sent by device <tx_nbr> correctly synchronized (not accounting for bit errors) by the receiver <rx_nbr>
  */
-uint chm_is_packet_synched(tx_l_c_t *tx_l, uint tx_nbr, uint rx_nbr, p2G4_rxv2_t *rx, bs_time_t current_time){
+uint chm_is_packet_synched(tx_l_c_t *tx_l, uint tx_nbr, uint rx_nbr, rx_status_t *rx_st, bs_time_t current_time){
 
   rec_status_t *rec_s = &rec_status[rx_nbr];
 
@@ -289,17 +289,17 @@ uint chm_is_packet_synched(tx_l_c_t *tx_l, uint tx_nbr, uint rx_nbr, p2G4_rxv2_t
     rec_s->rx_ctr = rec_s->rx_ctr + 1;
     rec_s->last_rx_ctr = rec_s->rx_ctr;
 
-    CalculateRxPowerAndISI(tx_l, rec_s, rx->antenna_gain, tx_nbr, rx_nbr, current_time);
+    CalculateRxPowerAndISI(tx_l, rec_s, rx_st->rx_s.antenna_gain, tx_nbr, rx_nbr, current_time);
 
-    m_analog_rx[rx_nbr](modem_o[rx_nbr], &rx->radio_params, &rec_s->SNR_analog_o,
+    m_analog_rx[rx_nbr](modem_o[rx_nbr], &rx_st->rx_s.radio_params, &rec_s->SNR_analog_o,
                         &rec_s->RSSI_meas_power, rec_s->rx_pow, tx_l, tx_nbr);
 
     combine_SNR(rec_s);
 
-    rec_s->BER = m_dig_perf_ber[rx_nbr](modem_o[rx_nbr], &rx->radio_params, rec_s->SNR_total);
-    rec_s->sync_prob = m_dig_perf_sync[rx_nbr](modem_o[rx_nbr], &rx->radio_params, rec_s->SNR_total, &tx_l->tx_list[tx_nbr].tx_s);
+    rec_s->BER = m_dig_perf_ber[rx_nbr](modem_o[rx_nbr], &rx_st->rx_modem_params, rec_s->SNR_total);
+    rec_s->sync_prob = m_dig_perf_sync[rx_nbr](modem_o[rx_nbr], &rx_st->rx_modem_params, rec_s->SNR_total, &tx_l->tx_list[tx_nbr].tx_s);
 
-    dump_ModemRx(current_time, tx_nbr, rx_nbr, n_devs, 0, &rx->radio_params, rec_s, tx_l );
+    dump_ModemRx(current_time, tx_nbr, rx_nbr, n_devs, 0, &rx_st->rx_modem_params, rec_s, tx_l );
   }
 
   return bs_random_Bern(rec_s->sync_prob);

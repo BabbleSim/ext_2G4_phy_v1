@@ -8,6 +8,7 @@
 
 #include "bs_types.h"
 #include "bs_pc_2G4_types.h"
+#include "modem_if_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -129,6 +130,7 @@ typedef struct {
   bs_time_t payload_end; //Last us (included) in which the payload ends
   p2G4_rxv2_t rx_s; //Reception request parameters
   p2G4_rxv2_done_t rx_done_s; //Response message (being prepared)
+  p2G4_modemdigparams_t rx_modem_params; //Parameters we are passing to the modem digital model for this reception
   int tx_nbr; //If we found a fitting Tx, which is its device number
   uint biterrors;
   rx_state_t state;

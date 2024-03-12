@@ -438,7 +438,7 @@ static void f_rx_found(uint d){
    *   (This flaw existed also in the v1 API FSM version)
    */
   if ((rx_status->rx_s.prelocked_tx)
-      || (chm_is_packet_synched( &tx_l_c, tx_d, d,  &rx_status->rx_s, current_time ) ))
+      || (chm_is_packet_synched( &tx_l_c, tx_d, d, rx_status, current_time ) ))
   {
     p2G4_txv2_t *tx_s = &tx_l_c.tx_list[tx_d].tx_s;
     rx_status->sync_end    = tx_s->start_packet_time + BS_MAX((int)rx_status->rx_s.pream_and_addr_duration - 1,0);
@@ -474,7 +474,7 @@ static int rx_bit_error_calc(uint d, uint tx_nbr, rx_status_t *rx_st) {
         || (tx_l_c.tx_list[tx_nbr].tx_s.coding_rate != rx_st->rx_s.coding_rate)) {
       biterrors = bs_random_Binomial(st->errorspercalc, RAND_PROB_1/2);
     } else {
-      biterrors = chm_bit_errors(&tx_l_c, tx_nbr, d, &rx_st->rx_s, current_time, st->errorspercalc);
+      biterrors = chm_bit_errors(&tx_l_c, tx_nbr, d, rx_st, current_time, st->errorspercalc);
     }
     st->us_to_next_calc  = st->rate_uspercalc - 1;
   }
@@ -876,6 +876,11 @@ static void prepare_rx_common(uint d, p2G4_rxv2_t *rxv2_s){
 
   //Initialize the reception status
   memcpy(&rx_status->rx_s, rxv2_s, sizeof(p2G4_rxv2_t));
+
+  rx_status->rx_modem_params.modulation = rxv2_s->radio_params.modulation;
+  rx_status->rx_modem_params.center_freq = rxv2_s->radio_params.center_freq;
+  rx_status->rx_modem_params.coding_rate = rxv2_s->coding_rate;
+
   if (rx_status->rx_s.scan_duration < UINT32_MAX) {
     rx_status->scan_end = rx_status->rx_s.start_time + rx_status->rx_s.scan_duration - 1;
   } else {

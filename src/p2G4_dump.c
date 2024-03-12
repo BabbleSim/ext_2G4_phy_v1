@@ -126,6 +126,7 @@ static void dump_modemrx_heading(FILE *file){
     return;
   }
   fprintf(file,"time,tx_nbr,CalNotRecal,center_freq,modulation,"
+               //"coding_rate,"
                "BER,syncprob,SNR,anaSNR,ISISNR,att[i],rxpow[i]\n");
 }
 
@@ -685,7 +686,7 @@ void dump_cca(cca_status_t *cca, uint dev_nbr) {
                    stats[dev_nbr].nbr_CCA);
 }
 
-void dump_ModemRx(bs_time_t CurrentTime, uint tx_nbr, uint dev_nbr, uint ndev, uint CalNotRecal, p2G4_radioparams_t *radio_p, rec_status_t *rx_st, tx_l_c_t *tx_l ){
+void dump_ModemRx(bs_time_t CurrentTime, uint tx_nbr, uint dev_nbr, uint ndev, uint CalNotRecal, p2G4_modemdigparams_t *modem_p, rec_status_t *rx_st, tx_l_c_t *tx_l ){
   if ( ( modemrx_f == NULL ) || ( modemrx_f[dev_nbr] == NULL ) ) {
     return;
   }
@@ -699,14 +700,17 @@ void dump_ModemRx(bs_time_t CurrentTime, uint tx_nbr, uint dev_nbr, uint ndev, u
   uint printed = snprintf(to_print, _ModemRxStrSize,
                           "%"PRItime",%u,"
                           "%u,%f,%u,"
+                          //"%u,"
                           "%e,%e,"
                           "%f,%f,%f",
                           CurrentTime,
                           tx_nbr,
 
                           CalNotRecal,
-                          p2G4_freq_to_d(radio_p->center_freq),
-                          radio_p->modulation,
+                          p2G4_freq_to_d(modem_p->center_freq),
+                          modem_p->modulation,
+
+                          //modem_p->coding_rate,
 
                           rx_st->BER/(double)RAND_PROB_1,
                           rx_st->sync_prob/(double)RAND_PROB_1,

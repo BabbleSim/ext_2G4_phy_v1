@@ -61,7 +61,7 @@ void dump_cca(cca_status_t *cca, uint dev_nbr);
 /**
  * Write to file information about a modem model invocation
  */
-void dump_ModemRx(bs_time_t now, uint tx_nbr, uint d, uint n_dev, uint CalNotRecal, p2G4_radioparams_t *radio_params, rec_status_t *rec_s, tx_l_c_t *txl_c );
+void dump_ModemRx(bs_time_t now, uint tx_nbr, uint d, uint n_dev, uint CalNotRecal, p2G4_modemdigparams_t* radio_params, rec_status_t *rec_s, tx_l_c_t *txl_c );
 
 #ifdef __cplusplus
 }
