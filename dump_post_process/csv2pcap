@@ -7,6 +7,17 @@ import argparse
 import struct
 from csv_common import *
 
+# Wireshark constants
+WS_FLAGS_PHY_1M = 0b00<<14
+WS_FLAGS_PHY_2M = 0b01<<14
+WS_FLAGS_PHY_CODED = 0b10<<14
+WS_FLAGS_SIGNAL_POWER = 0b1<<1
+
+# BabbleSim constants (see ext_2G4_libPhyComv1/src/bs_pc_2G4_modulations.h)
+P2G4_MOD_BLE = 0x10
+P2G4_MOD_BLE2M = 0x20
+P2G4_MOD_BLE_CODED = 0x50
+
 # default max packet length (phdr + access address + pdu + crc)
 SNAPLEN = 512
 
@@ -31,6 +42,11 @@ def write(outfile, *inputs, snaplen = SNAPLEN, basetime=None):
 
 	inputs = [ CSVFile(f) for f in inputs ]
 	rows = [ next(cf, None) for cf in inputs ]
+
+	# As the FEC1 and FEC2 are separate, it is necessary to have a link between them.
+	# A FEC2 necessarily appears after a FEC1 and two FEC1/FEC2s cannot follow each other
+	# (no mixing).   Tuple format: (timestamp_FEC1, CI, Access_Address)
+	coded_phy_fec1 = [(0, 0,  0) for _ in range(len(inputs))]
 
 	while True:
 		min_ts = None
@@ -70,9 +86,33 @@ def write(outfile, *inputs, snaplen = SNAPLEN, basetime=None):
 			print("Truncated input file (partial packet), writing partial packet in output")
 			orig_len = len(pdu_crc)
 		orig_len += 14; # 10 bytes phdr + 4 bytes access address
-		incl_len = min(orig_len, snaplen)
 
 		access_address = int(row['phy_address'], 16)
+
+		flags = 0
+		modulation = int(row['modulation'], 10)
+		if modulation == P2G4_MOD_BLE:
+			flags |= WS_FLAGS_PHY_1M
+		elif modulation == P2G4_MOD_BLE2M:
+			flags |= WS_FLAGS_PHY_2M
+		elif modulation == P2G4_MOD_BLE_CODED:
+			if len(pdu_crc) == 1:
+				# FEC1
+				coded_phy_fec1[min_idx] = (min_ts, pdu_crc[0], access_address)
+				continue
+			else:
+				# FEC2
+				min_ts = coded_phy_fec1[min_idx][0]
+				flags |= WS_FLAGS_PHY_CODED
+				pdu_crc = bytes([coded_phy_fec1[min_idx][1]]) + pdu_crc
+				orig_len += 1
+				access_address = coded_phy_fec1[min_idx][2]
+		
+		# Transmission power (dBm)
+		flags |= WS_FLAGS_SIGNAL_POWER
+		signal_power = int(float(row['power_level']))
+
+		incl_len = min(orig_len, snaplen)
 
 		ts = basetime + min_ts
 		ts_sec = ts // 1000000
@@ -87,11 +127,11 @@ def write(outfile, *inputs, snaplen = SNAPLEN, basetime=None):
 				# packet data, incl_len bytes
 				# - phdr, 10 bytes
 				rf_channel,
-				0, # signal power
+				signal_power,
 				0, # noise power
 				0, # access address offenses
 				0, # reference access address
-				0, # flags
+				flags,
 				# - le packet (access address + pdu + crc, no preamble)
 				access_address)
 		outfile.write(buf)
