@@ -38,7 +38,7 @@ Mod=$5;
 Packet_size=$9;
 
 if ((Mod == 80) && (Packet_size > 4)) { # BLE Coded Phy - FEC2 part
-  if (CI==0) {
+  if (CI=="00") {
      CR=8;
   } else {
      CR=2;
@@ -51,7 +51,7 @@ RF_CHANNEL=rfchannel($3);
 AA=$4;
 RSSI=-40;
 if (length(Packet) >= 2) {
-  CI=strtonum(substr(Packet, 1, 2));
+  CI=substr(Packet, 1, 2);
 }
 if (Mod == 16){
 printf("Item time=%.0f aa=%s rssi=%i rfchannel=%i phy=1Mbps rawdata=\"%s\"\n",TI,AA,RSSI, RF_CHANNEL, rtrim(Packet));
