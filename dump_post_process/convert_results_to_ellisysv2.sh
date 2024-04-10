@@ -18,17 +18,17 @@ do
   echo -e "\n" >> $TMP_FILE
 done
 
-sort -g $TMP_FILE | awk '
+echo -e "FileFormat:Bluetooth\n\
+                version=1.0\n\
+\n\
+ItemFormat:LE version=1.1"
+
+awk '
 function rfchannel(freq) { return (freq-2)/2; }
 function rtrim(s)        { sub(/[ \t\r\n]+$/, "", s); return s; }
 
 BEGIN{
 FS=",";
-print("FileFormat:Bluetooth\n\
-                version=1.0\n\
-\n\
-ItemFormat:LE version=1.1")
-
 }
 {
 Packet=$10;
@@ -43,7 +43,7 @@ if ((Mod == 80) && (Packet_size > 4)) { # BLE Coded Phy - FEC2 part
   } else {
      CR=2;
   }
-  printf("Item time=%.0f aa=%s rssi=%i rfchannel=%i phy=Coded coding=Coded%i rawdata=\"%s\"\n", TI, AA, RSSI, RF_CHANNEL, CR, rtrim(Packet));
+  printf("%.0f aa=%s rssi=%i rfchannel=%i phy=Coded coding=Coded%i rawdata=\"%s\"\n", TI, AA, RSSI, RF_CHANNEL, CR, rtrim(Packet));
   next
 }
 TI = $1 * 1000;
@@ -54,12 +54,14 @@ if (length(Packet) >= 2) {
   CI=substr(Packet, 1, 2);
 }
 if (Mod == 16){
-printf("Item time=%.0f aa=%s rssi=%i rfchannel=%i phy=1Mbps rawdata=\"%s\"\n",TI,AA,RSSI, RF_CHANNEL, rtrim(Packet));
+printf("%.0f aa=%s rssi=%i rfchannel=%i phy=1Mbps rawdata=\"%s\"\n",TI,AA,RSSI, RF_CHANNEL, rtrim(Packet));
 }
 if (Mod == 32 || Mod == 33){
-printf("Item time=%.0f aa=%s rssi=%i rfchannel=%i phy=2Mbps rawdata=\"%s\"\n",TI,AA,RSSI, RF_CHANNEL, rtrim(Packet));
+printf("%.0f aa=%s rssi=%i rfchannel=%i phy=2Mbps rawdata=\"%s\"\n",TI,AA,RSSI, RF_CHANNEL, rtrim(Packet));
 }
-}'
+}' $TMP_FILE | sort -g | awk '{print "Item time="$0}'
+
+
 
 #Examples of the importable format:
 #v1.0:
