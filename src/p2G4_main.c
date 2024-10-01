@@ -86,13 +86,15 @@ static int pick_and_validate_abort(uint d, p2G4_abort_t *ab, const char* type) {
 
   bs_trace_raw_time(8,"Device %u - Reevaluating %s abort\n", d, type);
 
+  p2G4_phy_get_new_abort_request(d);
   do {
-    ret = p2G4_phy_get_new_abort(d, ab);
+    ret = p2G4_phy_get_new_abort_receive(d, ab);
     if ( ret == PB_MSG_TERMINATE) {
       bs_trace_raw_time(4,"Device %u terminated the simulation (there was %i left)\n", d, nbr_active_devs-1);
       nbr_active_devs = 0;
       return 1;
     } else if ( ret == P2G4_MSG_RERESP_IMMRSSI ) {
+      bs_trace_raw_time(4,"Device %u requested an immediate RSSI measurement\n", d);
       p2G4_rssi_t rssi_req;
       p2G4_rssi_done_t rssi_resp;
 

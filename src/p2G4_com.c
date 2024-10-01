@@ -147,11 +147,17 @@ void p2G4_phy_get_abort_struct(uint d, p2G4_abort_t* abort_s) {
 /**
  * Ask the device for a new abort struct for the ongoing Tx or Rx
  */
-int p2G4_phy_get_new_abort(uint d, p2G4_abort_t* abort_s) {
+void p2G4_phy_get_new_abort_request(uint d){
   if (pb_phy_is_connected_to_device(&cb_med_state, d)) {
     pc_header_t r_header = P2G4_MSG_ABORTREEVAL;
     write(cb_med_state.ff_ptd[d], &r_header, sizeof(r_header));
-
+  }
+}
+/**
+ * Pick the new abort response from the device (or something else)
+ */
+int p2G4_phy_get_new_abort_receive(uint d, p2G4_abort_t* abort_s) {
+  if (pb_phy_is_connected_to_device(&cb_med_state, d)) {
     pc_header_t header = PB_MSG_DISCONNECT;
     read(cb_med_state.ff_dtp[d], &header, sizeof(header));
 
