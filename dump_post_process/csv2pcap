@@ -2,6 +2,10 @@
 # Copyright 2019 Oticon A/S
 # SPDX-License-Identifier: Apache-2.0
 
+# This script takes the BLE traffic from Babblesim 2G4 Phy dumps, and converts them
+# into a pcap formatted file.
+# Note the csv2pcapng script can also be used to generate pcapng files.
+
 import time
 import argparse
 import struct
@@ -153,7 +157,7 @@ def write(outfile, *inputs, snaplen = SNAPLEN, basetime=None):
 		outfile.write(pdu_crc[:(incl_len - 14)])
 
 def parse_args():
-	parser = argparse.ArgumentParser(description='Convert BabbleSim Phy csv files to pcap')
+	parser = argparse.ArgumentParser(description='Convert BabbleSim Phy csv files (BLE traffic) to pcap')
 	parser.add_argument(
 			'-er', '--epoch_real',
 			action='store_true',

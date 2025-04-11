@@ -3,6 +3,9 @@
 # Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+# This script takes both BLE and 802.15.4 traffic from Babblesim 2G4 Phy dumps, and converts them
+# into a pcapng formatted file.
+
 # For information on the pcapng format see https://pcapng.com/ & https://www.ietf.org/staging/draft-tuexen-opsawg-pcapng-02.html
 # You may also want to check
 #   https://tshark.dev/

@@ -2,7 +2,7 @@
 # Copyright 2018 Oticon A/S
 # SPDX-License-Identifier: Apache-2.0
 
-# Script to convert the BabbleSim 2G4 phy dumps into the format the ellisys can
+# Script to convert the BabbleSim 2G4 phy BLE traffic dumps into the format the ellisys can
 # import (v1.1), supporting 2Mbps BLE
 #
 # Run for example as:

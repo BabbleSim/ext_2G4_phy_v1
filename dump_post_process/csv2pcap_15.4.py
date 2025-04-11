@@ -3,6 +3,10 @@
 # Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+# This script takes the 802.15.4 traffic from Babblesim 2G4 Phy dumps, and converts them
+# into a pcap formatted file.
+# Note the csv2pcapng script can also be used to generate pcapng files.
+
 import time
 import argparse
 import struct
@@ -101,7 +105,7 @@ def write(outfile, *inputs, snaplen = SNAPLEN, basetime=None):
 		outfile.write(pdu_crc[:(incl_len - 5)])
 
 def parse_args():
-	parser = argparse.ArgumentParser(description='Convert BabbleSim Phy csv files to pcap')
+	parser = argparse.ArgumentParser(description='Convert BabbleSim Phy csv files (802.15.4 traffic) to pcap')
 	parser.add_argument(
 			'-er', '--epoch_real',
 			action='store_true',
