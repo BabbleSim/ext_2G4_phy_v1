@@ -909,10 +909,23 @@ static void prepare_rx_common(uint d, p2G4_rxv2_t *rxv2_s){
     rx_status->err_calc_state.rate_uspercalc = 1000000 / rxv2_s->error_calc_rate;
     rx_status->err_calc_state.us_to_next_calc = 0;
   } else {
-    bs_trace_error_time_line("The device %u requested a reception with an error calc rate "
-                             "of %u times per s, but only integer multiples or integer dividers of 1MHz "
-                             "are supported so far (for ex. 3MHz, 1MHz, 250KHz, 62.5KHz)\n",
-                             d, rxv2_s->error_calc_rate);
+    bool found = false;
+    for (int t = 2; t < 5; t++) {
+      if (rxv2_s->error_calc_rate*t % 1000000 == 0) {
+        rx_status->err_calc_state.errorspercalc = t*rxv2_s->error_calc_rate / 1000000;
+        rx_status->err_calc_state.rate_uspercalc = t;
+        rx_status->err_calc_state.us_to_next_calc = 0;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      bs_trace_error_time_line("The device %u requested a reception with an error calc rate "
+                               "of %u times per s, but only integer dividers of 1MHz "
+                               "or integer multiples of 250KHz or 333KHz "
+                               "are supported so far (for ex. 5MHz, 1.250MHz, 250KHz, 62.5KHz)\n",
+                               d, rxv2_s->error_calc_rate);
+    }
   }
 
   rx_status->tx_lost = false;
