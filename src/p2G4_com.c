@@ -163,13 +163,16 @@ int p2G4_phy_get_new_abort_receive(uint d, p2G4_abort_t* abort_s) {
 
     if (header == PB_MSG_TERMINATE) {
       return PB_MSG_TERMINATE;
+    } else if (header == PB_MSG_DISCONNECT) {
+      pb_phy_free_one_device(&cb_med_state ,d);
+      return PB_MSG_DISCONNECT;
     } else if (header == P2G4_MSG_RERESP_IMMRSSI) {
       return P2G4_MSG_RERESP_IMMRSSI;
     } else if (header != P2G4_MSG_RERESP_ABORTREEVAL) {
-      //if the read failed or the device really wants to disconnect in the
-      //middle of an abort (which is not really supported) we try to
-      //handle it gracefully
-      pb_phy_free_one_device(&cb_med_state ,d);
+      //if we get another response, the device is misbehaving => let's terminate the simulation
+      bs_trace_warning_line("Device %i sent invalid response during abort reevaluation (%u) => Terminating\n",
+                            d, header);
+      return PB_MSG_TERMINATE;
     } else {
       p2G4_phy_get_abort_struct(d, abort_s);
     }

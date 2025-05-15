@@ -79,7 +79,8 @@ static int pick_abort_tail(uint d, p2G4_abort_t *ab, const char* type) {
 }
 /*
  * Pick abort from device.
- * If something goes wrong it returns != 0, and the simulation shall be terminated
+ * if the devices terminates it returns PB_MSG_TERMINATE, if it disconencts PB_MSG_DISCONNECT
+ * otherwise (everything went well, and the abort structure was updated) it returns 0
  */
 static int pick_and_validate_abort(uint d, p2G4_abort_t *ab, const char* type) {
   int ret;
@@ -92,7 +93,11 @@ static int pick_and_validate_abort(uint d, p2G4_abort_t *ab, const char* type) {
     if ( ret == PB_MSG_TERMINATE) {
       bs_trace_raw_time(4,"Device %u terminated the simulation (there was %i left)\n", d, nbr_active_devs-1);
       nbr_active_devs = 0;
-      return 1;
+      return PB_MSG_TERMINATE;
+    } else if ( ret == PB_MSG_DISCONNECT ) {
+      nbr_active_devs -= 1;
+      bs_trace_raw_time(5,"Device %u disconnected during %s abort reeval (%i left)\n", d, type, nbr_active_devs);
+      return PB_MSG_DISCONNECT;
     } else if ( ret == P2G4_MSG_RERESP_IMMRSSI ) {
       bs_trace_raw_time(4,"Device %u requested an immediate RSSI measurement\n", d);
       p2G4_rssi_t rssi_req;
@@ -227,8 +232,12 @@ static void f_tx_abort_reeval(uint d){
 
   tx_s = &tx_l_c.tx_list[d].tx_s;
 
-  if (pick_and_validate_abort(d, &(tx_s->abort), "Tx"))
+  if (pick_and_validate_abort(d, &(tx_s->abort), "Tx") != 0) {
+    //Device disconnected or terminated
+    txl_clear(d);
+    fq_remove(d);
     return;
+  }
 
   tx_schedule_next_event(tx_s, d);
 }
@@ -301,15 +310,17 @@ static int find_fitting_tx(rx_status_t *rx_s){
 
 static void f_rx_found(uint d);
 
-static void rx_possible_abort_recheck(uint d, rx_status_t *rx_st, bool scanning){
+static int rx_possible_abort_recheck(uint d, rx_status_t *rx_st, bool scanning) {
   if ( current_time >= rx_st->rx_s.abort.recheck_time ) {
-    if ( pick_and_validate_abort(d, &(rx_a[d].rx_s.abort), "Rx") != 0 ){
-      return;
+    int ret;
+    if ((ret = pick_and_validate_abort(d, &(rx_a[d].rx_s.abort), "Rx")) != 0) {
+      return ret;
     }
     if (scanning && (rx_st->rx_s.abort.abort_time < rx_st->scan_end) ) {
         rx_st->scan_end = rx_st->rx_s.abort.abort_time - 1;
     }
   }
+  return 0;
 }
 
 
@@ -347,7 +358,12 @@ static void f_rx_search_start(uint d) {
   rx_status_t *rx_status;
   rx_status = &rx_a[d];
 
-  rx_possible_abort_recheck(d, rx_status, true);
+  if (rx_possible_abort_recheck(d, rx_status, true) != 0) {
+    //Device disconnected or terminated
+    rx_status->state = Rx_State_NotSearching;
+    fq_remove(d);
+    return;
+  }
 
   bs_trace_raw_time(8,"Device %u - Starting Rx\n", d);
 
@@ -361,7 +377,7 @@ static void f_rx_search_start(uint d) {
   if (tx_d >= 0) {
     rx_status->tx_nbr = tx_d;
     rx_status->state = Rx_State_NotSearching;
-    /* Let's call it directly and save an event */
+    /* Let's call it directly and save an Rx_Found event */
     f_rx_found(d);
     return;
   }
@@ -413,7 +429,13 @@ static void f_rx_search_reeval(uint d) {
   rx_status_t *rx_status;
   rx_status = &rx_a[d];
 
-  rx_possible_abort_recheck(d, rx_status, true);
+  if (rx_possible_abort_recheck(d, rx_status, true) != 0) {
+    //Device disconnected or terminated
+    rx_status->state = Rx_State_NotSearching;
+    fq_remove(d);
+    return;
+  }
+
 
   if ( current_time > rx_status->scan_end ) {
     rx_scan_ended(d, rx_status, "Rx Search");
@@ -485,7 +507,11 @@ static int rx_bit_error_calc(uint d, uint tx_nbr, rx_status_t *rx_st) {
 
 static void f_rx_sync(uint d){
 
-  rx_possible_abort_recheck(d, &rx_a[d], true);
+  if (rx_possible_abort_recheck(d, &rx_a[d], true) != 0) {
+    //Device disconnected or terminated
+    fq_remove(d);
+    return;
+  }
 
   if ( current_time > rx_a[d].scan_end ) {
     rx_scan_ended(d, &rx_a[d], "Rx sync");
@@ -536,7 +562,7 @@ static void f_rx_sync(uint d){
     switch (header) {
     case PB_MSG_DISCONNECT:
       nbr_active_devs -= 1;
-      bs_trace_raw_time(5,"Device %u disconnected during Rx (minor protocol violation) (%i left)\n", d, nbr_active_devs);
+      bs_trace_raw_time(5,"Device %u disconnected during Rx header evaluation (%i left)\n", d, nbr_active_devs);
       device_accepted = 0;
       fq_remove(d);
       return;
@@ -588,7 +614,11 @@ static void f_rx_sync(uint d){
 
 static void f_rx_header(uint d){
 
-  rx_possible_abort_recheck(d, &rx_a[d], false);
+  if (rx_possible_abort_recheck(d, &rx_a[d], false) != 0) {
+    //Device disconnected or terminated
+    fq_remove(d);
+    return;
+  }
 
   rx_a[d].biterrors += rx_bit_error_calc(d, rx_a[d].tx_nbr, &rx_a[d]);
 
@@ -618,7 +648,11 @@ static void f_rx_header(uint d){
 
 static void f_rx_payload(uint d){
 
-  rx_possible_abort_recheck(d, &rx_a[d], false);
+  if (rx_possible_abort_recheck(d, &rx_a[d], false) != 0) {
+    //Device disconnected or terminated
+    fq_remove(d);
+    return;
+  }
 
   rx_a[d].biterrors += rx_bit_error_calc(d, rx_a[d].tx_nbr, &rx_a[d]);
 
@@ -685,7 +719,9 @@ static void f_cca_meas(uint d) {
   p2G4_rssi_done_t RSSI_meas;
 
   if ( current_time >= req->abort.recheck_time ) {
-    if ( pick_and_validate_abort(d, &(req->abort), "CCA") != 0 ) {
+    if (pick_and_validate_abort(d, &(req->abort), "CCA") != 0) {
+      //Device disconnected or terminated
+      fq_remove(d);
       return;
     }
     if ((req->abort.abort_time < cca_s->scan_end) ) {
