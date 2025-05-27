@@ -47,7 +47,9 @@ void fq_find_next(){
 
   for (int i = 1; i < n_devs; i ++) {
     fq_element_t *el = &f_queue[i];
-    if (el->time < chosen_f_time) {
+    if (el->time > chosen_f_time) {
+      continue;
+    } else if (el->time < chosen_f_time) {
       next_d = i;
       chosen_f_time = el->time;
       continue;
@@ -61,7 +63,7 @@ void fq_find_next(){
 }
 
 /**
- * Add a function for dev_nbr to the queue and reorder it
+ * Add a function for dev_nbr to the queue
  */
 void fq_add(bs_time_t time, f_index_t index, uint32_t dev_nbr) {
   fq_element_t *el = &f_queue[dev_nbr];
