@@ -38,12 +38,6 @@ typedef enum {
 //Note: We need to use these indexes, instead of just keeping the function pointers
 //to be able to set the order between the functions
 
-/* Queue element time */
-typedef struct {
-  bs_time_t time; /* Simualted time when the call should be done */
-  f_index_t f_index; /* Function type to be called */
-} fq_element_t;
-
 /**
  * @brief Initialize the function queue
  *
